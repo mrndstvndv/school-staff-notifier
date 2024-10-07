@@ -1,5 +1,4 @@
 import data.MessageData
-import java.io.IOException
 import java.net.SocketTimeoutException
 import java.net.URI
 import java.net.URLEncoder
