@@ -32,15 +32,15 @@ func sendSMS(writer http.ResponseWriter, request *http.Request) {
 	log.Printf("Command run with output: %s\n", out)
 }
 
-func getBoundIP() net.IP {
+func getBoundIP() (string, error) {
 	conn, err := net.Dial("udp", "8.8.8.8:80")
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
 	localAddr := conn.LocalAddr().(*net.UDPAddr)
 
-	return localAddr.IP
+	return localAddr.IP.String(), nil
 }
 
 func main() {
@@ -51,11 +51,15 @@ func main() {
 	}
 	number = os.Args[1]
 
-	localip := getBoundIP()
+	localip, err := getBoundIP();if err != nil {
+		log.Println("Unable to get localip")
+		localip = "localhost"
+	}
+
 	port := 3333
 
 	fmt.Printf("Server is listening at http://%s:%d", localip, port)
-	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	if err != nil {
 		log.Printf("error occured with server: %s\n", err)
 	}
