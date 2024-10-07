@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -31,6 +32,17 @@ func sendSMS(writer http.ResponseWriter, request *http.Request) {
 	log.Printf("Command run with output: %s\n", out)
 }
 
+func getBoundIP() net.IP {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+
+	return localAddr.IP
+}
+
 func main() {
 	http.HandleFunc("/sendSMS", sendSMS)
 		
@@ -39,8 +51,11 @@ func main() {
 	}
 	number = os.Args[1]
 
-	fmt.Println("Server is listening at port 3333")
-	err := http.ListenAndServe(":3333", nil)
+	localip := getBoundIP()
+	port := 3333
+
+	fmt.Printf("Server is listening at http://%s:%d", localip, port)
+	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	if err != nil {
 		log.Printf("error occured with server: %s\n", err)
 	}
