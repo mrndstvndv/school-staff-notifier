@@ -32,15 +32,20 @@ func sendSMS(writer http.ResponseWriter, request *http.Request) {
 	log.Printf("Command run with output: %s\n", out)
 }
 
-func getBoundIP() (string, error) {
-	conn, err := net.Dial("udp", "8.8.8.8:80")
+func getLocalIP() (string, error) {
+	addrs, err := net.InterfaceAddrs()
 	if err != nil {
 		return "", err
 	}
 
-	localAddr := conn.LocalAddr().(*net.UDPAddr)
-
-	return localAddr.IP.String(), nil
+	for _, addr := range addrs {
+		ipNet, ok := addr.(*net.IPNet)
+		if ok && !ipNet.IP.IsLoopback() && ipNet.IP.To4() != nil {
+			// This will return the first non-loopback IP address (e.g., the IP assigned to your hotspot)
+			return ipNet.IP.String(), nil
+		}
+	}
+	return "", fmt.Errorf("no active IP address found")
 }
 
 func main() {
@@ -51,9 +56,9 @@ func main() {
 	}
 	number = os.Args[1]
 
-	localip, err := getBoundIP();if err != nil {
-		log.Println("Unable to get localip")
+	localip, err := getLocalIP();if err != nil {
 		localip = "localhost"
+		log.Println("Unable to get localip")
 	}
 
 	port := 3333
