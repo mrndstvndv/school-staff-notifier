@@ -19,13 +19,16 @@ func sendSMS(writer http.ResponseWriter, request *http.Request) {
 
 	log.Printf("Trying to send message: %s\n", message)
 
-	cmd := exec.Command("termux-api-sms", "-n", number, message)
-	out, err := cmd.Output()
+	cmd := exec.Command("termux-sms-send", "-n", number, message)
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Fatal("Failed to senf message")
+		http.Error(writer, fmt.Sprintf("Failed sending sms: %s", err), http.StatusInternalServerError)
+		log.Printf("Failed sending sms: %s\n", err)
+	} else {
+		log.Println("Message sent.")
 	}
 
-	log.Println(string(out))
+	log.Printf("Command run with output: %s\n", out)
 }
 
 func main() {
