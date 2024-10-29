@@ -1,17 +1,78 @@
 package main
 
 import (
+	"bongserver/db"
+	"bongserver/utils"
 	"fmt"
 	"log"
-	"net"
 	"net/http"
 	"os"
 	"os/exec"
 )
 
 var number string
+var sendSmsEnabled = false
+
+var GlobalState db.Library
+
+func init() {
+	GlobalState = db.Library{
+		Labs: []db.Lab{
+			{
+				Name: "1",
+				Computers: []db.Computer{
+					{
+						Number: "1",
+						Issues: []db.Issue{
+							{
+								Timestamp:   utils.CurrentTimeUnixString(),
+								Description: "Broken screen",
+							},
+						},
+					},
+					{
+						Number: "2",
+						Issues: []db.Issue{
+							{
+								Timestamp:   utils.CurrentTimeUnixString(),
+								Description: "Broken keyboard",
+							},
+						},
+					},
+				},
+			},
+			{
+				Name: "2",
+				Computers: []db.Computer{
+					{
+						Number: "1",
+						Issues: []db.Issue{
+							{
+								Timestamp:   utils.CurrentTimeUnixString(),
+								Description: "Broken mouse",
+							},
+						},
+					},
+					{
+						Number: "2",
+						Issues: []db.Issue{
+							{
+								Timestamp:   utils.CurrentTimeUnixString(),
+								Description: "Python not installed",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
 
 func sendSMS(writer http.ResponseWriter, request *http.Request) {
+	if !sendSmsEnabled {
+		return
+	}
+
 	message := request.PostFormValue("message")
 
 	if message == "" {
@@ -32,31 +93,24 @@ func sendSMS(writer http.ResponseWriter, request *http.Request) {
 	log.Printf("Command run with output: %s\n", out)
 }
 
-func getLocalIP() (string, error) {
-	addrs, err := net.InterfaceAddrs()
-	if err != nil {
-		return "", err
-	}
-
-	for _, addr := range addrs {
-		ipNet, ok := addr.(*net.IPNet)
-		if ok && !ipNet.IP.IsLoopback() && ipNet.IP.To4() != nil {
-			// This will return the first non-loopback IP address (e.g., the IP assigned to your hotspot)
-			return ipNet.IP.String(), nil
-		}
-	}
-	return "", fmt.Errorf("no active IP address found")
-}
-
 func main() {
-	http.HandleFunc("/sendSMS", sendSMS)
-		
-	if len(os.Args) < 2 {
-		log.Fatalf("Number is not passed. Usage: %s [number]", os.Args[0])
+	_, err := db.Connect()
+	if err != nil {
+		log.Fatal(err)
+	} else {
+		log.Print("Connected to database")
 	}
-	number = os.Args[1]
 
-	localip, err := getLocalIP();if err != nil {
+	http.HandleFunc("/sendSMS", sendSMS)	
+
+	if len(os.Args) < 2 {
+		log.Printf("Number is not passed, disabling sending a message. Usage: %s [number]\n", os.Args[0])
+	} else {
+		number = os.Args[1]
+	}
+
+	localip, err := utils.GetLocalIP()
+	if err != nil {
 		localip = "localhost"
 		log.Println("Unable to get localip")
 	}
