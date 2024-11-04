@@ -5,6 +5,7 @@ import (
 	"bongserver/utils"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -96,12 +97,17 @@ func sendSMS(writer http.ResponseWriter, request *http.Request) {
 func main() {
 	_, err := db.Connect()
 	if err != nil {
-		log.Fatal(err)
+		switch err.(type) {
+		case *net.OpError:
+			log.Fatalf("Unable to connect to database, check if the database is running\nError: %s\n", err)
+		default:
+			log.Fatalf("Unknown error occured: %s", err)
+		}
 	} else {
 		log.Print("Connected to database")
 	}
 
-	http.HandleFunc("/sendSMS", sendSMS)	
+	http.HandleFunc("/sendSMS", sendSMS)
 
 	if len(os.Args) < 2 {
 		log.Printf("Number is not passed, disabling sending a message. Usage: %s [number]\n", os.Args[0])
