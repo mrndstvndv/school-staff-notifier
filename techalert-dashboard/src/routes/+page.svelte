@@ -1,294 +1,180 @@
-<script>
-	// Mock data for demonstration
-	const totalComputers = 30;
-	const nonWorkingComputers = 5;
+<script lang="ts">
+	import "../app.css";
+	import { onMount } from "svelte";
 
-	const computers = Array(totalComputers)
-		.fill(undefined, 0, 30)
-		.map((_, index) => ({
-			id: index + 1,
-			status: index < nonWorkingComputers ? "Not Working" : "Working",
-			issues:
-				index < nonWorkingComputers
-					? [
-							"Keyboard not working",
-							"App out of date",
-							"Required IDE not installed",
-						][index % 3]
-					: null,
-		}));
+	interface Issue {
+		studentName: string;
+		professorName: string;
+		section: string;
+		labName: string;
+		description: string;
+		timestamp: string;
+		schoolYear: number;
+		pcNumber: number;
+	}
 
-	const recentNotifications = [
-		{
-			id: 1,
-			message: "Computer #3 reported keyboard issue",
-			time: "2 hours ago",
-		},
-		{
-			id: 2,
-			message: "Computer #7 missing required software",
-			time: "4 hours ago",
-		},
-		{ id: 3, message: "Computer #12 app update needed", time: "1 day ago" },
-	];
+	interface Computer {
+		id: number;
+		name: string;
+		status: "operational" | "issue" | "maintenance";
+		issues: Issue[] | null;
+	}
+
+	let computers: Computer[] = [];
+	let filter = "all";
+
+	onMount(() => {
+		// Simulating data fetch
+		computers = [
+			{ id: 1, name: "PC-001", status: "operational", issues: null },
+			{
+				id: 2,
+				name: "PC-002",
+				status: "issue",
+				issues: [
+					{
+						studentName: "John Doe",
+						professorName: "Dr. Smith",
+						section: "A",
+						labName: "Lab 1",
+						description: "Blue screen",
+						timestamp: "2023-10-01T10:00:00Z",
+						schoolYear: 2023,
+						pcNumber: 2,
+					},
+				],
+			},
+			{ id: 3, name: "PC-003", status: "operational", issues: null },
+			{
+				id: 4,
+				name: "PC-004",
+				status: "issue",
+				issues: [
+					{
+						studentName: "Jane Doe",
+						professorName: "Dr. Brown",
+						section: "B",
+						labName: "Lab 2",
+						description: "No internet connection",
+						timestamp: "2023-10-02T11:00:00Z",
+						schoolYear: 2023,
+						pcNumber: 4,
+					},
+				],
+			},
+			{
+				id: 5,
+				name: "PC-005",
+				status: "maintenance",
+				issues: [
+					{
+						studentName: "Admin",
+						professorName: "N/A",
+						section: "N/A",
+						labName: "Lab 3",
+						description: "Scheduled update",
+						timestamp: "2023-10-03T12:00:00Z",
+						schoolYear: 2023,
+						pcNumber: 5,
+					},
+				],
+			},
+			{ id: 6, name: "PC-006", status: "operational", issues: null },
+		];
+	});
+
+	$: filteredComputers =
+		filter === "all"
+			? computers
+			: computers.filter((pc) => pc.status === filter);
+
+	function getStatusColor(status: Computer["status"]) {
+		switch (status) {
+			case "operational":
+				return "bg-green-500";
+			case "issue":
+				return "bg-red-500";
+			case "maintenance":
+				return "bg-yellow-500";
+			default:
+				return "bg-gray-500";
+		}
+	}
 </script>
 
-<div class="dashboard">
-	<header>
-		<h1>Computer Lab Dashboard</h1>
-	</header>
-
-	<div class="content">
-		<div class="top-widgets">
-			<div class="card summary-widget">
-				<h2>Lab Status Summary</h2>	
-				<p class="text-lg">
-					<strong>{nonWorkingComputers}</strong> out of
-					<strong>{totalComputers}</strong> computers are currently not
-					working
-				</p>
-			</div>
-
-			<div class="card notification-widget">
-				<h2>Recent Notifications</h2>
-				<ul class="notification-list">
-					{#each recentNotifications as notification}
-						<li>
-							<p>{notification.message}</p>
-							<small>{notification.time}</small>
-						</li>
-					{/each}
-				</ul>
-			</div>
+<div class="min-h-screen bg-gray-100">
+	<header class="bg-white shadow">
+		<div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+			<h1 class="text-3xl font-bold text-gray-900">
+				Computer Lab Dashboard
+			</h1>
 		</div>
-
-		<main>
-			<div class="card computer-grid">
-				<h2>Computer Status</h2>
-				<div class="grid-container">
-					{#each computers as computer}
-						<div
-							class="computer-item {computer.status ===
-							'Not Working'
-								? 'not-working'
-								: ''}"
-						>
-							<h3>Computer #{computer.id}</h3>
-							<p class="status">{computer.status}</p>
-							{#if computer.issues}
-								<p class="issues">{computer.issues}</p>
+	</header>
+	<main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+		<div class="px-4 py-6 sm:px-0">
+			<div class="mb-4">
+				<label for="filter" class="mr-2">Filter by status:</label>
+				<select
+					id="filter"
+					bind:value={filter}
+					class="border rounded p-2"
+				>
+					<option value="all">All</option>
+					<option value="operational">Operational</option>
+					<option value="issue">Issue</option>
+					<option value="maintenance">Maintenance</option>
+				</select>
+			</div>
+			<div
+				class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+			>
+				{#each filteredComputers as pc (pc.id)}
+					<div class="bg-white overflow-hidden shadow rounded-lg">
+						<div class="px-4 py-5 sm:p-6">
+							<div class="flex items-center">
+								<div
+									class={`flex-shrink-0 rounded-md p-3 ${getStatusColor(pc.status)}`}
+								>
+									<svg
+										class="h-6 w-6 text-white"
+										fill="none"
+										viewBox="0 0 24 24"
+										stroke="currentColor"
+									>
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+										/>
+									</svg>
+								</div>
+								<div class="ml-5 w-0 flex-1">
+									<dl>
+										<dt
+											class="text-sm font-medium text-gray-500 truncate"
+										>
+											{pc.name}
+										</dt>
+										<dd class="flex items-baseline">
+											<div
+												class="text-2xl font-semibold text-gray-900"
+											>
+												{pc.status}
+											</div>
+										</dd>
+									</dl>
+								</div>
+							</div>
+							{#if pc.issues}
+								<div class="mt-3 text-sm text-red-600">
+									Issue: {pc.issues[0].description}
+								</div>
 							{/if}
 						</div>
-					{/each}
-				</div>
+					</div>
+				{/each}
 			</div>
-		</main>
-	</div>
+		</div>
+	</main>
 </div>
-
-<style>
-	:root {
-		--background: hsl(0 0% 100%);
-		--foreground: hsl(222.2 84% 4.9%);
-		--card: hsl(0 0% 100%);
-		--card-foreground: hsl(222.2 84% 4.9%);
-		--popover: hsl(0 0% 100%);
-		--popover-foreground: hsl(222.2 84% 4.9%);
-		--primary: hsl(222.2 47.4% 11.2%);
-		--primary-foreground: hsl(210 40% 98%);
-		--secondary: hsl(210 40% 96.1%);
-		--secondary-foreground: hsl(222.2 47.4% 11.2%);
-		--muted: hsl(210 40% 96.1%);
-		--muted-foreground: hsl(215.4 16.3% 46.9%);
-		--accent: hsl(210 40% 96.1%);
-		--accent-foreground: hsl(222.2 47.4% 11.2%);
-		--warning: hsl(38 92% 50%);
-		--warning-foreground: hsl(38 92% 10%);
-		--border: hsl(214.3 31.8% 91.4%);
-		--input: hsl(214.3 31.8% 91.4%);
-		--ring: hsl(222.2 84% 4.9%);
-		--radius: 0.5rem;
-	}
-
-	.dark {
-		--background: hsl(222.2 84% 4.9%);
-		--foreground: hsl(210 40% 98%);
-		--card: hsl(222.2 84% 4.9%);
-		--card-foreground: hsl(210 40% 98%);
-		--popover: hsl(222.2 84% 4.9%);
-		--popover-foreground: hsl(210 40% 98%);
-		--primary: hsl(210 40% 98%);
-		--primary-foreground: hsl(222.2 47.4% 11.2%);
-		--secondary: hsl(217.2 32.6% 17.5%);
-		--secondary-foreground: hsl(210 40% 98%);
-		--muted: hsl(217.2 32.6% 17.5%);
-		--muted-foreground: hsl(215 20.2% 65.1%);
-		--accent: hsl(217.2 32.6% 17.5%);
-		--accent-foreground: hsl(210 40% 98%);
-		--warning: hsl(38 92% 50%);
-		--warning-foreground: hsl(38 92% 90%);
-		--border: hsl(217.2 32.6% 17.5%);
-		--input: hsl(217.2 32.6% 17.5%);
-		--ring: hsl(212.7 26.8% 83.9%);
-	}
-
-	.dashboard {
-		font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-			"Helvetica Neue", Arial, sans-serif;
-		background-color: var(--background);
-		color: var(--foreground);
-		line-height: 1.5;
-
-		max-width: 1200px;
-		margin: 0 auto;
-		padding: 20px;
-	}
-
-	header {
-		background-color: var(--primary);
-		color: var(--primary-foreground);
-		padding: 20px;
-		margin-bottom: 20px;
-		border-radius: var(--radius);
-	}
-
-	h1,
-	h2,
-	h3 {
-		margin: 0;
-		font-weight: 600;
-	}
-
-	h1 {
-		font-size: 1.5rem;
-	}
-
-	h2 {
-		font-size: 1.25rem;
-		margin-bottom: 1rem;
-	}
-
-	h3 {
-		font-size: 1rem;
-	}
-
-	.content {
-		display: flex;
-		flex-direction: column;
-		gap: 20px;
-	}
-
-	.top-widgets {
-		display: flex;
-		gap: 20px;
-		flex-wrap: wrap;
-	}
-
-	.card {
-		background-color: var(--card);
-		color: var(--card-foreground);
-		border: 1px solid var(--border);
-		border-radius: var(--radius);
-		padding: 20px;
-	}
-
-	.summary-widget,
-	.notification-widget {
-		flex: 1;
-		min-width: 250px;
-	}
-
-	.summary-widget {
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		text-align: center;
-
-		background-color: var(--accent);
-		color: var(--accent-foreground);
-	}
-
-	p {
-		margin: 0;
-	}
-
-	.text-lg {
-		font-size: 1.125rem;
-	}
-
-	.grid-container {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-		gap: 1rem;
-	}
-
-	.computer-item {
-		background-color: var(--secondary);
-		color: var(--secondary-foreground);
-		border: 1px solid var(--border);
-		border-radius: var(--radius);
-		padding: 1rem;
-		transition: all 0.3s ease;
-	}
-
-	.computer-item:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-	}
-
-	.computer-item.not-working {
-		background-color: var(--warning);
-		color: var(--warning-foreground);
-	}
-
-	.status {
-		font-weight: 600;
-		margin: 0.5rem 0;
-	}
-
-	.issues {
-		font-size: 0.875rem;
-		color: var(--warning-foreground);
-		opacity: 0.8;
-	}
-
-	.notification-list {
-		list-style-type: none;
-		padding: 0;
-		margin: 0;
-	}
-
-	.notification-list li {
-		margin-bottom: 15px;
-		border-bottom: 1px solid var(--border);
-		padding-bottom: 10px;
-	}
-
-	.notification-list li:last-child {
-		border-bottom: none;
-		margin-bottom: 0;
-		padding-bottom: 0;
-	}
-
-	small {
-		color: var(--muted-foreground);
-		display: block;
-		margin-top: 5px;
-	}
-
-	@media (max-width: 768px) {
-		.top-widgets {
-			flex-direction: column;
-		}
-
-		.summary-widget,
-		.notification-widget {
-			width: 100%;
-		}
-
-		.grid-container {
-			grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-		}
-	}
-</style>
-
