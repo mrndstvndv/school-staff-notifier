@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Issue Report</title>
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <form id="issueForm" class="issue-form">
+        <h1>Report Lab Issue</h1>
+        
+        <div class="form-group">
+          <label for="studentName">Student Name</label>
+          <input type="text" id="studentName" required>
+        </div>
+
+        <div class="form-group">
+          <label for="professorName">Professor Name</label>
+          <input type="text" id="professorName" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="section">Section</label>
+            <input type="text" id="section" required>
+          </div>
+
+          <div class="form-group">
+            <label for="labName">Lab Name</label>
+            <input type="text" id="labName" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="schoolYear">School Year</label>
+            <input type="number" id="schoolYear" required>
+          </div>
+
+          <div class="form-group">
+            <label for="pcNumber">PC Number</label>
+            <input type="number" id="pcNumber" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="description">Description</label>
+          <textarea id="description" rows="4" required></textarea>
+        </div>
+
+        <button type="submit">Submit Issue</button>
+      </form>
+    </div>
+    <script src="./src/main.ts" type="module"></script>
+  </body>
+</html>
