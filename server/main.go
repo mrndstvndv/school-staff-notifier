@@ -3,6 +3,8 @@ package main
 import (
 	"bongserver/db"
 	"bongserver/utils"
+	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net"
@@ -11,66 +13,16 @@ import (
 	"os/exec"
 )
 
-var number string
-var sendSmsEnabled = false
+var (
+	number         string
+	sendSmsEnabled = false
 
-var GlobalState db.Library
-
-func init() {
-	GlobalState = db.Library{
-		Labs: []db.Lab{
-			{
-				Name: "1",
-				Computers: []db.Computer{
-					{
-						Number: "1",
-						Issues: []db.Issue{
-							{
-								Timestamp:   utils.CurrentTimeUnixString(),
-								Description: "Broken screen",
-							},
-						},
-					},
-					{
-						Number: "2",
-						Issues: []db.Issue{
-							{
-								Timestamp:   utils.CurrentTimeUnixString(),
-								Description: "Broken keyboard",
-							},
-						},
-					},
-				},
-			},
-			{
-				Name: "2",
-				Computers: []db.Computer{
-					{
-						Number: "1",
-						Issues: []db.Issue{
-							{
-								Timestamp:   utils.CurrentTimeUnixString(),
-								Description: "Broken mouse",
-							},
-						},
-					},
-					{
-						Number: "2",
-						Issues: []db.Issue{
-							{
-								Timestamp:   utils.CurrentTimeUnixString(),
-								Description: "Python not installed",
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-}
+	conn *sql.DB
+)
 
 func sendSMS(writer http.ResponseWriter, request *http.Request) {
 	if !sendSmsEnabled {
+		utils.LogDebug("Sending SMS is disabled")
 		return
 	}
 
@@ -94,8 +46,30 @@ func sendSMS(writer http.ResponseWriter, request *http.Request) {
 	log.Printf("Command run with output: %s\n", out)
 }
 
-func main() {
-	_, err := db.Connect()
+// TODO: Add validation for the fields
+func issueFromRequest(request *http.Request) *db.Issue {
+	decoder := json.NewDecoder(request.Body)
+
+	var issue db.Issue
+	err := decoder.Decode(&issue)
+	if err != nil {
+		log.Fatalf("Unable to decode request: %s\n", err)
+	}
+
+	return &issue
+}
+
+func reportIssue(writer http.ResponseWriter, request *http.Request) {
+	issue := issueFromRequest(request)
+
+	err := db.InsertIssue(conn, issue)
+	if err != nil {
+		log.Fatalf("Unable to insert issue: %s\n", err)
+	}
+}
+
+func init() {
+	c, err := db.Connect()
 	if err != nil {
 		switch err.(type) {
 		case *net.OpError:
@@ -107,13 +81,23 @@ func main() {
 		log.Print("Connected to database")
 	}
 
-	http.HandleFunc("/sendSMS", sendSMS)
+	conn = c
+}
+
+// TODO: add websocket
+func main() {
+	defer conn.Close()
+
+	utils.LogDebug("Creating table")
+	db.CreateTable(conn)
 
 	if len(os.Args) < 2 {
 		log.Printf("Number is not passed, disabling sending a message. Usage: %s [number]\n", os.Args[0])
 	} else {
 		number = os.Args[1]
 	}
+
+	http.HandleFunc("/reportIssue", reportIssue)
 
 	localip, err := utils.GetLocalIP()
 	if err != nil {
@@ -123,7 +107,7 @@ func main() {
 
 	port := 3333
 
-	fmt.Printf("Server is listening at http://%s:%d", localip, port)
+	log.Printf("Server is listening at http://%s:%d\n", localip, port)
 	err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	if err != nil {
 		log.Printf("error occured with server: %s\n", err)

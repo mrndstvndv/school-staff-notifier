@@ -1,25 +1,12 @@
 package db
 
 type Issue struct {
-	Timestamp string
-	Description string
+	StudentName   string `json:"studentName"`
+	ProfessorName string `json:"professorName"`
+	Section       string `json:"section"`
+	LabName       string `json:"labName"`
+	Description   string `json:"description"`
+	Timestamp     string `json:"timestamp"`
+	SchoolYear    int    `json:"schoolYear"`
+	PcNumber      int    `json:"pcNumber"`
 }
-
-type Computer struct {
-	Number string
-	Issues []Issue
-}
-
-func (computer Computer) isFunctioning() bool {
-	return len(computer.Issues) == 0
-}
-
-type Lab struct {
-	Name    string
-	Computers []Computer
-}
-
-type Library struct {
-	Labs []Lab
-}
-
