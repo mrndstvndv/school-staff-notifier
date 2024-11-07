@@ -18,7 +18,59 @@ var (
 	sendSmsEnabled = false
 
 	conn *sql.DB
+
 )
+
+func init() {
+	c, err := db.Connect("bongserver.db")
+	if err != nil {
+		switch err.(type) {
+		case *net.OpError:
+			log.Fatalf("Unable to connect to database, check if the database is running\nError: %s\n", err)
+		default:
+			log.Fatalf("Unknown error occured: %s", err)
+		}
+	} else {
+		log.Print("Connected to database")
+	}
+
+	conn = c
+}
+
+// TODO: add websocket
+func main() {
+	defer conn.Close()
+
+	utils.LogDebug("Creating table")
+	db.CreateTable(conn)
+
+	err := db.PrintIssues(conn) 
+	if err != nil {
+		utils.LogDebug("Failed to print issues: %s", err)
+	}
+
+	if len(os.Args) < 2 {
+		log.Printf("Number is not passed, disabling sending a message. Usage: %s [number]\n", os.Args[0])
+	} else {
+		number = os.Args[1]
+	}
+
+	http.HandleFunc("/reportIssue", reportIssue)
+
+	localip, err := utils.GetLocalIP()
+	if err != nil {
+		localip = "localhost"
+		log.Println("Unable to get localip")
+	}
+
+	port := 3333
+
+	log.Printf("Server is listening at http://%s:%d\n", localip, port)
+	err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	if err != nil {
+		log.Printf("error occured with server: %s\n", err)
+	}
+}
 
 func sendSMS(writer http.ResponseWriter, request *http.Request) {
 	if !sendSmsEnabled {
@@ -66,50 +118,6 @@ func reportIssue(writer http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		log.Fatalf("Unable to insert issue: %s\n", err)
 	}
-}
 
-func init() {
-	c, err := db.Connect()
-	if err != nil {
-		switch err.(type) {
-		case *net.OpError:
-			log.Fatalf("Unable to connect to database, check if the database is running\nError: %s\n", err)
-		default:
-			log.Fatalf("Unknown error occured: %s", err)
-		}
-	} else {
-		log.Print("Connected to database")
-	}
-
-	conn = c
-}
-
-// TODO: add websocket
-func main() {
-	defer conn.Close()
-
-	utils.LogDebug("Creating table")
-	db.CreateTable(conn)
-
-	if len(os.Args) < 2 {
-		log.Printf("Number is not passed, disabling sending a message. Usage: %s [number]\n", os.Args[0])
-	} else {
-		number = os.Args[1]
-	}
-
-	http.HandleFunc("/reportIssue", reportIssue)
-
-	localip, err := utils.GetLocalIP()
-	if err != nil {
-		localip = "localhost"
-		log.Println("Unable to get localip")
-	}
-
-	port := 3333
-
-	log.Printf("Server is listening at http://%s:%d\n", localip, port)
-	err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
-	if err != nil {
-		log.Printf("error occured with server: %s\n", err)
-	}
+	db.PrintIssues(conn)
 }
