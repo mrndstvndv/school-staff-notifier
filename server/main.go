@@ -3,6 +3,7 @@ package main
 import (
 	"bongserver/db"
 	"bongserver/utils"
+	"bongserver/websocket"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -18,7 +19,7 @@ var (
 	sendSmsEnabled = false
 
 	conn *sql.DB
-
+	hub *websocket.Hub
 )
 
 func init() {
@@ -35,6 +36,7 @@ func init() {
 	}
 
 	conn = c
+	hub = websocket.NewHub()
 }
 
 // TODO: add websocket
@@ -44,7 +46,7 @@ func main() {
 	utils.LogDebug("Creating table")
 	db.CreateTable(conn)
 
-	err := db.PrintIssues(conn) 
+	err := db.PrintIssues(conn)
 	if err != nil {
 		utils.LogDebug("Failed to print issues: %s", err)
 	}
@@ -55,7 +57,12 @@ func main() {
 		number = os.Args[1]
 	}
 
+	go hub.Run()
+
 	http.HandleFunc("/reportIssue", reportIssue)
+	http.HandleFunc("/ws", func(writer http.ResponseWriter, request *http.Request) {
+		websocket.ServeWs(hub, writer, request)
+	})
 
 	localip, err := utils.GetLocalIP()
 	if err != nil {
@@ -112,12 +119,14 @@ func issueFromRequest(request *http.Request) *db.Issue {
 }
 
 func reportIssue(writer http.ResponseWriter, request *http.Request) {
-	issue := issueFromRequest(request)
+	// issue := issueFromRequest(request)
 
-	err := db.InsertIssue(conn, issue)
-	if err != nil {
-		log.Fatalf("Unable to insert issue: %s\n", err)
-	}
+	// err := db.InsertIssue(conn, issue)
+	// if err != nil {
+	// 	log.Fatalf("Unable to insert issue: %s\n", err)
+	// }
+
+	hub.Broadcast <- []byte("New issue reported")
 
 	db.PrintIssues(conn)
 }
