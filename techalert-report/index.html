@@ -13,8 +13,7 @@
 		<!-- Header -->
 		<header class="bg-[#5C4033] p-4">
 			<div class="container mx-auto flex items-center gap-4 justify-center">
-				<img src="./static/CSU_cagayan.png" alt="University Logo"
-					class="w-16 h-16">
+				<img src="./static/CSU_cagayan.png" alt="University Logo" class="w-16 h-16">
 				<h1 class="text-white text-2xl md:text-3xl font-semibold">Cagayan State University</h1>
 			</div>
 		</header>
@@ -22,7 +21,7 @@
 		<!-- Main Form -->
 		<main class="container mx-auto p-4 md:p-8">
 			<div class="bg-white rounded-lg shadow-lg p-6 md:p-8">
-				<form class="grid md:grid-cols-2 gap-8">
+				<form class="grid md:grid-cols-2 gap-8" id="issue-form">
 					<!-- Left Column - Input Fields -->
 					<div class="space-y-5">
 						<div class="grid md:grid-cols-2 gap-5">
@@ -39,11 +38,17 @@
 							</div>
 						</div>
 
-						<div class="grid md:grid-cols-2">
+						<div class="grid md:grid-cols-2 gap-5">
 							<div>
-								<label for="year-section"
-									class="block text-gray-700 font-semibold mb-2 text-sm">Year/Section</label>
-								<input class="w-full" type="text" name="year-section" id="year-section">
+								<label for="year"
+									class="block text-gray-700 font-semibold mb-2 text-sm">Year</label>
+								<input class="w-full" type="number" name="year" id="year">
+							</div>
+
+							<div>
+								<label for="section"
+									class="block text-gray-700 font-semibold mb-2 text-sm">Section</label>
+								<input class="w-full" type="text" name="section" id="section">
 							</div>
 						</div>
 
@@ -102,24 +107,26 @@
 						<textarea placeholder="Type your concern here."
 							class="w-full row-span-2 h-[200px] md:h-full p-4 border-[1.5px] border-green-600 rounded-lg resize-none focus:ring-2 focus:ring-green-500 focus:border-green-500"></textarea>
 					</div>
-				</form>
 
-				<div class="flex justify-end mt-4">
-					<button type="submit"
-						class="bg-green-700 text-white px-8 py-2 rounded-md hover:bg-green-800 transition-colors inline-flex items-center gap-2 text-center">
-						Send
-						<!-- <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+					<div class="flex justify-end col-start-2">
+						<button type="submit"
+							class="bg-green-700 text-white px-8 py-2 rounded-md hover:bg-green-800 transition-colors inline-flex items-center gap-2 text-center">
+							Send
+							<!-- <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
 							stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
 							class="lucide lucide-send-horizontal">
 							<path
 								d="M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z" />
 							<path d="M6 12h16" />
 						</svg> -->
-					</button>
-				</div>
+						</button>
+					</div>
+				</form>
 			</div>
 		</main>
 	</div>
+
+	<script type="module" src="./src/main.ts"></script>
 </body>
 
 <style>

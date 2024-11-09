@@ -1,19 +1,12 @@
-interface Issue {
-	studentName: string;
-	professorName: string;
-	section: string;
-	labName: string;
-	description: string;
-	timestamp: string;
-	schoolYear: number;
-	pcNumber: number;
-}
+import { Issue, MessageFns, protobufPackage } from "./issues";
 
 class IssueReporter {
 	private form: HTMLFormElement;
 
 	constructor() {
-		this.form = document.getElementById('issueForm') as HTMLFormElement;
+		console.log('IssueReporter initialized');
+		this.form = document.getElementById('issue-form') as HTMLFormElement;
+		console.log('Form:', this.form);
 		this.initializeForm();
 	}
 
@@ -22,33 +15,47 @@ class IssueReporter {
 	}
 
 	private getFormData(): Issue {
+		const issueCheckboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+		const issues = Array.from(issueCheckboxes).map(checkbox => (checkbox as HTMLInputElement).nextElementSibling?.textContent || '');
+
 		return {
-			studentName: (document.getElementById('studentName') as HTMLInputElement).value,
-			professorName: (document.getElementById('professorName') as HTMLInputElement).value,
-			section: (document.getElementById('section') as HTMLInputElement).value,
-			labName: (document.getElementById('labName') as HTMLInputElement).value,
-			description: (document.getElementById('description') as HTMLTextAreaElement).value,
-			timestamp: new Date().toISOString(),
-			schoolYear: parseInt((document.getElementById('schoolYear') as HTMLInputElement).value),
-			pcNumber: parseInt((document.getElementById('pcNumber') as HTMLInputElement).value)
+			student: {
+				firstName: (document.getElementById('first-name') as HTMLInputElement).value,
+				lastName: (document.getElementById('last-name') as HTMLInputElement).value,
+				year: parseInt((document.getElementById('year') as HTMLInputElement).value),
+				section: (document.getElementById('section') as HTMLInputElement).value,
+				// TODO: Add course
+				course: "CS",
+				professor: (document.getElementById('professor') as HTMLInputElement).value
+			},
+			labRoom: (document.getElementById('lab-room') as HTMLSelectElement).value,
+			pcNumber: parseInt((document.getElementById('pc-number') as HTMLInputElement).value),
+			issues: issues,
+			concern: (document.querySelector('textarea') as HTMLTextAreaElement).value
 		};
 	}
 
 	private async postIssue(issueData: Issue): Promise<void> {
+		console.debug('Posting issue:', issueData);
+		console.debug('Encoded issue:', Issue.encode(issueData).finish());
+
 		try {
 			const response = await fetch("http://localhost:3333/reportIssue", {
 				method: 'POST',
-				body: JSON.stringify(issueData)
+				headers: {
+					'Content-Type': 'application/octet-stream',
+				},
+				body: Issue.encode(issueData).finish(),
 			});
 
 			if (!response.ok) {
-				console.log('Failed to report issue!');
+				throw new Error('Failed to report issue');
 			}
 
-			const json = await response.json();
-			console.log(json);
+			//const json = await response.json();
+			//console.debug('Issue reported successfully:', json);
 		} catch (error) {
-			console.log('Failed to report issue!');
+			console.error('Failed to report issue:', error);
 		}
 	}
 
@@ -56,9 +63,7 @@ class IssueReporter {
 		e.preventDefault();
 
 		const issueData = this.getFormData();
-		console.log('Issue reported:', issueData);
 
-		// TODO: send issueData to the backend
 		await this.postIssue(issueData);
 	}
 }

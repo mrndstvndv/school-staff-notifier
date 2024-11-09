@@ -7,11 +7,14 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"os/exec"
+
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -39,7 +42,6 @@ func init() {
 	hub = websocket.NewHub()
 }
 
-// TODO: add websocket
 func main() {
 	defer conn.Close()
 
@@ -105,6 +107,15 @@ func sendSMS(writer http.ResponseWriter, request *http.Request) {
 	log.Printf("Command run with output: %s\n", out)
 }
 
+func serializeMessage(issue *Issue) ([]byte, error) {
+	out, err := proto.Marshal(issue)
+	if err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
 // TODO: Add validation for the fields
 func issueFromRequest(request *http.Request) *db.Issue {
 	decoder := json.NewDecoder(request.Body)
@@ -126,7 +137,13 @@ func reportIssue(writer http.ResponseWriter, request *http.Request) {
 	// 	log.Fatalf("Unable to insert issue: %s\n", err)
 	// }
 
-	hub.Broadcast <- []byte("New issue reported")
+	body, err := io.ReadAll(request.Body)
+	if err != nil {
+		utils.LogDebug("Unable to read body: %s", err)
+		http.Error(writer, "Unable to read body", http.StatusInternalServerError)
+	}
+
+	hub.Broadcast <- body
 
 	db.PrintIssues(conn)
 }
