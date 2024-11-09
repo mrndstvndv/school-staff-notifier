@@ -1,4 +1,4 @@
-import { Issue, MessageFns, protobufPackage } from "./issues";
+import { Issue } from "./issues";
 
 class IssueReporter {
 	private form: HTMLFormElement;
@@ -24,14 +24,16 @@ class IssueReporter {
 				lastName: (document.getElementById('last-name') as HTMLInputElement).value,
 				year: parseInt((document.getElementById('year') as HTMLInputElement).value),
 				section: (document.getElementById('section') as HTMLInputElement).value,
-				// TODO: Add course
+				// WARN: Add course
 				course: "CS",
 				professor: (document.getElementById('professor') as HTMLInputElement).value
 			},
 			labRoom: (document.getElementById('lab-room') as HTMLSelectElement).value,
 			pcNumber: parseInt((document.getElementById('pc-number') as HTMLInputElement).value),
 			issues: issues,
-			concern: (document.querySelector('textarea') as HTMLTextAreaElement).value
+			timestamp: Date.now().toString(),
+			concern: (document.querySelector('textarea') as HTMLTextAreaElement).value,
+			status: 0,
 		};
 	}
 

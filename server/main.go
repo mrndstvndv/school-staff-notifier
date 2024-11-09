@@ -2,10 +2,10 @@ package main
 
 import (
 	"bongserver/db"
+	"bongserver/protobuf"
 	"bongserver/utils"
 	"bongserver/websocket"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -22,7 +22,7 @@ var (
 	sendSmsEnabled = false
 
 	conn *sql.DB
-	hub *websocket.Hub
+	hub  *websocket.Hub
 )
 
 func init() {
@@ -48,11 +48,6 @@ func main() {
 	utils.LogDebug("Creating table")
 	db.CreateTable(conn)
 
-	err := db.PrintIssues(conn)
-	if err != nil {
-		utils.LogDebug("Failed to print issues: %s", err)
-	}
-
 	if len(os.Args) < 2 {
 		log.Printf("Number is not passed, disabling sending a message. Usage: %s [number]\n", os.Args[0])
 	} else {
@@ -62,6 +57,7 @@ func main() {
 	go hub.Run()
 
 	http.HandleFunc("/reportIssue", reportIssue)
+	http.HandleFunc("/getIssues", getIssues)
 	http.HandleFunc("/ws", func(writer http.ResponseWriter, request *http.Request) {
 		websocket.ServeWs(hub, writer, request)
 	})
@@ -107,7 +103,7 @@ func sendSMS(writer http.ResponseWriter, request *http.Request) {
 	log.Printf("Command run with output: %s\n", out)
 }
 
-func serializeMessage(issue *Issue) ([]byte, error) {
+func serializeMessage(issue *protobuf.Issue) ([]byte, error) {
 	out, err := proto.Marshal(issue)
 	if err != nil {
 		return nil, err
@@ -116,34 +112,44 @@ func serializeMessage(issue *Issue) ([]byte, error) {
 	return out, nil
 }
 
-// TODO: Add validation for the fields
-func issueFromRequest(request *http.Request) *db.Issue {
-	decoder := json.NewDecoder(request.Body)
-
-	var issue db.Issue
-	err := decoder.Decode(&issue)
+func getIssues(writer http.ResponseWriter, request *http.Request) {
+	issues, err := db.GetIssues(conn); 
 	if err != nil {
-		log.Fatalf("Unable to decode request: %s\n", err)
+		utils.LogDebug("Failed to get issues %s", err)
+		http.Error(writer, "Unable to marshal issue", http.StatusInternalServerError)
 	}
 
-	return &issue
+	byte, err := proto.Marshal(issues)
+	if err != nil {
+		utils.LogDebug("Unable to marshal issue: %s", err)
+		http.Error(writer, "Unable to marshal issue", http.StatusInternalServerError)
+	}
+
+	utils.LogDebug("Sending issues: %s", issues.Issues)
+
+	writer.Header().Add("Content-Type", "application/x-protobuf")
+	writer.Write(byte)
 }
 
 func reportIssue(writer http.ResponseWriter, request *http.Request) {
-	// issue := issueFromRequest(request)
-
-	// err := db.InsertIssue(conn, issue)
-	// if err != nil {
-	// 	log.Fatalf("Unable to insert issue: %s\n", err)
-	// }
-
 	body, err := io.ReadAll(request.Body)
 	if err != nil {
 		utils.LogDebug("Unable to read body: %s", err)
 		http.Error(writer, "Unable to read body", http.StatusInternalServerError)
 	}
 
-	hub.Broadcast <- body
+	var issue protobuf.Issue
+	err = proto.Unmarshal(body, &issue)
+	if err != nil {
+		log.Fatalf("Unable to insert issue: %s\n", err)
+	}
 
-	db.PrintIssues(conn)
+	utils.LogDebug("Received issue: %s", issue.Issues)
+
+	err = db.InsertIssue(conn, &issue)
+	if err != nil {
+		log.Fatalf("Unable to insert issue: %s\n", err)
+	}
+
+	hub.Broadcast <- body
 }

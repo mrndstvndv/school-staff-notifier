@@ -2,22 +2,31 @@ syntax = "proto3";
 
 package main;
 
-option go_package = "./";
+option go_package = "./protobuf";
 
 message Student {
-	string firstName = 1;
-	string lastName = 2;
-	int32 year = 3;
-	string section = 4;
-	string course = 5;
-	string professor = 6;
-}
+  string firstName = 1;
+  string lastName = 2;
+  string section = 3;
+  string course = 4;
+  string professor = 5;
+  int32 year = 6;
+};
+
+enum Status {
+  OPEN = 0;
+  CLOSED = 1;
+};
 
 message Issue {
-	Student student = 1;
-	string labRoom = 2;
-	int32 pcNumber = 3;
-	string concern = 4;
-	string timestamp = 6;
-	repeated string issues = 7;
+  Student student = 1;
+  Status status = 2;
+  string labRoom = 3;
+  string concern = 4;
+  string timestamp = 5;
+  int32 pcNumber = 6;
+  int32 id = 8;
+  repeated string issues = 9;
 };
+
+message IssueList { repeated Issue issues = 1; };

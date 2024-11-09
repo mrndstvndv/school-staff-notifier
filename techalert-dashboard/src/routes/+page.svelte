@@ -1,180 +1,130 @@
 <script lang="ts">
-	import "../app.css";
 	import { onMount } from "svelte";
+	import { APIENDPOINT } from "../lib/constants";
+	import "../app.css";
+	import { Issue, IssueList } from "../lib/types/issues";
 
-	interface Issue {
-		studentName: string;
-		professorName: string;
-		section: string;
-		labName: string;
-		description: string;
-		timestamp: string;
-		schoolYear: number;
-		pcNumber: number;
-	}
+	let issues: Issue[];
 
-	interface Computer {
-		id: number;
-		name: string;
-		status: "operational" | "issue" | "maintenance";
-		issues: Issue[] | null;
-	}
+	onMount(async () => {
+		try {
+			let res = await fetch(`${APIENDPOINT}/getIssues`, {
+				method: "GET",
+				headers: {
+					"Content-Type": "application/x-protobuf",
+				},
+			});
 
-	let computers: Computer[] = [];
-	let filter = "all";
+			if (!res.ok) {
+				throw new Error(`Failed to get issues ${res.status}`);
+			}
 
-	onMount(() => {
-		// Simulating data fetch
-		computers = [
-			{ id: 1, name: "PC-001", status: "operational", issues: null },
-			{
-				id: 2,
-				name: "PC-002",
-				status: "issue",
-				issues: [
-					{
-						studentName: "John Doe",
-						professorName: "Dr. Smith",
-						section: "A",
-						labName: "Lab 1",
-						description: "Blue screen",
-						timestamp: "2023-10-01T10:00:00Z",
-						schoolYear: 2023,
-						pcNumber: 2,
-					},
-				],
-			},
-			{ id: 3, name: "PC-003", status: "operational", issues: null },
-			{
-				id: 4,
-				name: "PC-004",
-				status: "issue",
-				issues: [
-					{
-						studentName: "Jane Doe",
-						professorName: "Dr. Brown",
-						section: "B",
-						labName: "Lab 2",
-						description: "No internet connection",
-						timestamp: "2023-10-02T11:00:00Z",
-						schoolYear: 2023,
-						pcNumber: 4,
-					},
-				],
-			},
-			{
-				id: 5,
-				name: "PC-005",
-				status: "maintenance",
-				issues: [
-					{
-						studentName: "Admin",
-						professorName: "N/A",
-						section: "N/A",
-						labName: "Lab 3",
-						description: "Scheduled update",
-						timestamp: "2023-10-03T12:00:00Z",
-						schoolYear: 2023,
-						pcNumber: 5,
-					},
-				],
-			},
-			{ id: 6, name: "PC-006", status: "operational", issues: null },
-		];
-	});
-
-	$: filteredComputers =
-		filter === "all"
-			? computers
-			: computers.filter((pc) => pc.status === filter);
-
-	function getStatusColor(status: Computer["status"]) {
-		switch (status) {
-			case "operational":
-				return "bg-green-500";
-			case "issue":
-				return "bg-red-500";
-			case "maintenance":
-				return "bg-yellow-500";
-			default:
-				return "bg-gray-500";
+			let data = await res.arrayBuffer();
+			let issueList = IssueList.decode(new Uint8Array(data));
+			issues = issueList.issues;
+			console.log("Issues:", issues[0]);
+		} catch (error) {
+			console.debug("Failed to report issue:", error);
 		}
-	}
+
+		// TODO: listent for new issues with webscocket
+		if (window.WebSocket) {
+			let ws = new WebSocket("http://localhost:3333/ws");
+			ws.onopen = () => {
+				console.debug("Connected to websocket");
+			};
+
+			ws.onmessage = (msg) => {
+				console.debug("Got message:", msg);
+			};
+
+			ws.onclose = () => {
+				console.debug("Websocket closed");
+			};
+		} else {
+			console.debug("Websocket not supported");
+		}
+	});
 </script>
 
-<div class="min-h-screen bg-gray-100">
-	<header class="bg-white shadow">
-		<div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-			<h1 class="text-3xl font-bold text-gray-900">
-				Computer Lab Dashboard
-			</h1>
-		</div>
-	</header>
-	<main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-		<div class="px-4 py-6 sm:px-0">
-			<div class="mb-4">
-				<label for="filter" class="mr-2">Filter by status:</label>
-				<select
-					id="filter"
-					bind:value={filter}
-					class="border rounded p-2"
-				>
-					<option value="all">All</option>
-					<option value="operational">Operational</option>
-					<option value="issue">Issue</option>
-					<option value="maintenance">Maintenance</option>
-				</select>
-			</div>
-			<div
-				class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
-			>
-				{#each filteredComputers as pc (pc.id)}
-					<div class="bg-white overflow-hidden shadow rounded-lg">
-						<div class="px-4 py-5 sm:p-6">
-							<div class="flex items-center">
-								<div
-									class={`flex-shrink-0 rounded-md p-3 ${getStatusColor(pc.status)}`}
-								>
-									<svg
-										class="h-6 w-6 text-white"
-										fill="none"
-										viewBox="0 0 24 24"
-										stroke="currentColor"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-										/>
-									</svg>
-								</div>
-								<div class="ml-5 w-0 flex-1">
-									<dl>
-										<dt
-											class="text-sm font-medium text-gray-500 truncate"
-										>
-											{pc.name}
-										</dt>
-										<dd class="flex items-baseline">
-											<div
-												class="text-2xl font-semibold text-gray-900"
-											>
-												{pc.status}
-											</div>
-										</dd>
-									</dl>
-								</div>
-							</div>
-							{#if pc.issues}
-								<div class="mt-3 text-sm text-red-600">
-									Issue: {pc.issues[0].description}
-								</div>
-							{/if}
+<div class="issues-container">
+	{#if issues === undefined}
+		<p class="loading">Loading issues...</p>
+	{:else if issues.length === 0}
+		<p class="no-issues">No issues found</p>
+	{:else}
+		{#each issues as issue}
+			<div class="issue-card">
+				<h3>{issue.student?.firstName} {issue.student?.lastName}</h3>
+				<div class="issue-details">
+					<!--
+					<p><strong>Issue ID:</strong> {issue.id}</p>
+					<p><strong>Status:</strong> {issue.status}</p>
+					-->
+					<p>
+						<strong>Created:</strong>
+						{new Date(Number.parseInt(issue.timestamp, 10)).toLocaleString()}
+					</p>
+					{#if issue.concern}
+						<p><strong>Description:</strong> {issue.concern}</p>
+					{/if}
+					{#if issue.student}
+						<div class="student-info">
+							<p><strong>Student Info:</strong></p>
+							<p>
+								Name: {issue.student.firstName}
+								{issue.student.lastName}
+							</p>
+							<p>
+								Year/Section: {issue.student.year}/{issue
+									.student.section}
+							</p>
 						</div>
-					</div>
-				{/each}
+					{/if}
+				</div>
 			</div>
-		</div>
-	</main>
+		{/each}
+	{/if}
 </div>
+
+<style>
+	.issues-container {
+		padding: 1rem;
+	}
+
+	.loading,
+	.no-issues {
+		text-align: center;
+		padding: 2rem;
+		color: #666;
+	}
+
+	.issue-card {
+		border: 1px solid #ddd;
+		border-radius: 8px;
+		padding: 1rem;
+		margin-bottom: 1rem;
+		background-color: white;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	}
+
+	.issue-card h3 {
+		margin: 0 0 1rem 0;
+		color: #333;
+	}
+
+	.issue-details {
+		display: grid;
+		gap: 0.5rem;
+	}
+
+	.issue-details p {
+		margin: 0;
+	}
+
+	.student-info {
+		margin-top: 1rem;
+		padding-top: 1rem;
+		border-top: 1px solid #eee;
+	}
+</style>
