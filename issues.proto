@@ -25,7 +25,7 @@ message Issue {
   string concern = 4;
   string timestamp = 5;
   int32 pcNumber = 6;
-  int32 id = 8;
+  int64 id = 8;
   repeated string issues = 9;
 };
 

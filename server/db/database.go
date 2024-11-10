@@ -162,29 +162,28 @@ func UpdateIssueStatus(db *sql.DB, id int64, status int32) error {
 	return err
 }
 
-// TODO: return the id of the inserted issue
-func InsertIssue(db *sql.DB, issue *protobuf.Issue) error {
+func InsertIssue(db *sql.DB, issue *protobuf.Issue) (int64, error) {
 	checkConnection(db)
 
 	issuesJSON, err := json.Marshal(issue.Issues)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	studentID, exists, err := getStudentID(db, issue.Student)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	if !exists {
 		studentID, err = insertStudent(db, issue.Student)
 		if err != nil {
-			return err
+			return 0, err
 		}
 	}
 
-	_, err = db.Exec(`INSERT INTO Issues (studentId, labRoom, pcNumber, concern, timestamp, issues) VALUES (?, ?, ?, ?, ?, ?)`,
+	result, err := db.Exec(`INSERT INTO Issues (studentId, labRoom, pcNumber, concern, timestamp, issues) VALUES (?, ?, ?, ?, ?, ?)`,
 		studentID, issue.LabRoom, issue.PcNumber, issue.Concern, issue.Timestamp, string(issuesJSON))
 
-	return err
+	return result.LastInsertId()
 }

@@ -113,7 +113,7 @@ func serializeMessage(issue *protobuf.Issue) ([]byte, error) {
 }
 
 func getIssues(writer http.ResponseWriter, request *http.Request) {
-	issues, err := db.GetIssues(conn); 
+	issues, err := db.GetIssues(conn)
 	if err != nil {
 		utils.LogDebug("Failed to get issues %s", err)
 		http.Error(writer, "Unable to marshal issue", http.StatusInternalServerError)
@@ -131,6 +131,12 @@ func getIssues(writer http.ResponseWriter, request *http.Request) {
 	writer.Write(byte)
 }
 
+func httpError(writer http.ResponseWriter, message string, args ...interface{}) {
+	message = fmt.Sprintf(message, args...)
+	utils.LogDebug(message)
+	http.Error(writer, message, http.StatusInternalServerError)
+}
+
 func reportIssue(writer http.ResponseWriter, request *http.Request) {
 	body, err := io.ReadAll(request.Body)
 	if err != nil {
@@ -146,10 +152,18 @@ func reportIssue(writer http.ResponseWriter, request *http.Request) {
 
 	utils.LogDebug("Received issue: %s", issue.Issues)
 
-	err = db.InsertIssue(conn, &issue)
+	id, err := db.InsertIssue(conn, &issue)
 	if err != nil {
 		log.Fatalf("Unable to insert issue: %s\n", err)
 	}
+	issue.Id = id
+
+	body, err = proto.Marshal(&issue)
+	if err != nil {
+		httpError(writer, "Unable to marshal issue: %s", err)
+	}
+
+	utils.LogDebug("Broadcasting issue: %s", body)
 
 	hub.Broadcast <- body
 }

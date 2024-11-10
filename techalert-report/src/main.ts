@@ -33,6 +33,7 @@ class IssueReporter {
 			issues: issues,
 			timestamp: Date.now().toString(),
 			concern: (document.querySelector('textarea') as HTMLTextAreaElement).value,
+			id: 0,
 			status: 0,
 		};
 	}

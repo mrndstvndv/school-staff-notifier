@@ -231,7 +231,7 @@ export const Issue: MessageFns<Issue> = {
       writer.uint32(48).int32(message.pcNumber);
     }
     if (message.id !== 0) {
-      writer.uint32(64).int32(message.id);
+      writer.uint32(64).int64(message.id);
     }
     for (const v of message.issues) {
       writer.uint32(74).string(v!);
@@ -299,7 +299,7 @@ export const Issue: MessageFns<Issue> = {
             break;
           }
 
-          message.id = reader.int32();
+          message.id = longToNumber(reader.int64());
           continue;
         }
         case 9: {
@@ -449,6 +449,17 @@ export type DeepPartial<T> = T extends Builtin ? T
 type KeysOfUnion<T> = T extends T ? keyof T : never;
 export type Exact<P, I extends P> = P extends Builtin ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
+
+function longToNumber(int64: { toString(): string }): number {
+  const num = globalThis.Number(int64.toString());
+  if (num > globalThis.Number.MAX_SAFE_INTEGER) {
+    throw new globalThis.Error("Value is larger than Number.MAX_SAFE_INTEGER");
+  }
+  if (num < globalThis.Number.MIN_SAFE_INTEGER) {
+    throw new globalThis.Error("Value is smaller than Number.MIN_SAFE_INTEGER");
+  }
+  return num;
+}
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

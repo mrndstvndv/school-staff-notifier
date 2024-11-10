@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
-	"build:proto": "protoc --plugin=protoc-gen-ts_proto=./node_modules/.bin/protoc-gen-ts_proto.exe --ts_proto_out=./src/lib/types/ -I ../ ../issues.proto",
+    "build:proto": "protoc --plugin=protoc-gen-ts_proto=./node_modules/.bin/protoc-gen-ts_proto.exe --ts_proto_out=./src/lib/types/ -I ../ ../issues.proto",
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
@@ -14,6 +14,7 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@tailwindcss/forms": "^0.5.9",
     "@tauri-apps/api": ">=2.0.0",
     "@tauri-apps/plugin-shell": ">=2.0.0",
     "ts-proto": "^2.2.5"
