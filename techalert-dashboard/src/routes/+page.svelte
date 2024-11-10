@@ -3,12 +3,24 @@
 	import "../app.css";
 	import type { PageData } from "./+page";
 	import { Issue } from "$lib/types/issues";
+	import IssueComponent from "$lib/components/IssueComponent.svelte";
 
 	export let data: PageData;
 	let issues = data.issues;
+	let sortDirection: "asc" | "desc" = "desc";
+	$: sortedIssues = issues.sort((a, b) => {
+		const timeA = Number.parseInt(a.timestamp, 10);
+		const timeB = Number.parseInt(b.timestamp, 10);
+		return sortDirection === "asc" ? timeA - timeB : timeB - timeA;
+	});
+
+	function sortIssues() {
+		console.debug("Sorting issues", issues);
+		sortDirection = sortDirection === "asc" ? "desc" : "asc";
+	}
 
 	onMount(async () => {
-		// TODO: listent for new issues with webscocket
+		// TODO: Notify system for new issues
 		if (window.WebSocket) {
 			let ws = new WebSocket("http://localhost:3333/ws");
 			console.log("Connecting to websocket");
@@ -44,110 +56,47 @@
 			console.debug("Websocket not supported");
 		}
 	});
-
-	function getStatusColor(status: number) {
-		if (status == 1) {
-			return "bg-green-500";
-		} else {
-			return "bg-red-500";
-		}
-	}
 </script>
 
 <div class="issues-container">
 	{#if issues.length === 0}
 		<p class="no-issues">No issues found</p>
 	{:else}
-		{#each issues.reverse() as issue}
-			<div class="bg-white overflow-hidden shadow rounded-lg mt-6 mb-6">
-				<div class="px-4 py-5 sm:p-6 grid gap-4">
-					<div class="flex items-center">
-						<div
-							class={`flex-shrink-0 rounded-md p-3 ${getStatusColor(issue.status)}`}
-						>
-							<svg
-								class="h-6 w-6 text-white"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke="currentColor"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-								/>
-							</svg>
-						</div>
-						<div class="ml-5 w-0 flex-1">
-							<dl>
-								<dt
-									class="text-sm font-medium text-gray-500 truncate"
-								>
-									PC-{issue.pcNumber}
-								</dt>
-								<!-- Concern -->
-								<div>
-									<p>
-										{issue.concern}
-									</p>
-								</div>
-							</dl>
-						</div>
-					</div>
+		<div class="flex justify-end mb-4">
+			<button
+				on:click={sortIssues}
+				class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium rounded-md"
+			>
+				Sort by Date
+				<svg
+					class="ml-2 h-4 w-4"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+				>
+					{#if sortDirection === "asc"}
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
+						/>
+					{:else}
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"
+						/>
+					{/if}
+				</svg>
+			</button>
+		</div>
 
-					<!-- Issue List -->
-					<div class="flex flex-col gap-2">
-						<dt class="font-semibold truncate">Issues</dt>
-
-						<ul>
-							{#each issue.issues as i, index}
-								<div class="flex items-center mb-4 group">
-									<input
-										id={`checkbox-${i}-${index}`}
-										type="checkbox"
-										value=""
-										class="peer size-5 bg-white border-[2px] checked:text-green-500 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
-									/>
-									<label
-										for={`checkbox-${i}-${index}`}
-										class="ms-2 select-none font-medium peer-checked:text-green-600 text-red-500"
-										>{i}</label
-									>
-								</div>
-							{/each}
-						</ul>
-					</div>
-				</div>
-			</div>
-		{/each}
+		<div class="grid m-4 gap-4">
+			{#each sortedIssues as issue (issue.id)}
+				<IssueComponent bind:issue />
+			{/each}
+		</div>
 	{/if}
 </div>
-
-<style>
-	.issues-container {
-		padding: 1rem;
-	}
-
-	.loading,
-	.no-issues {
-		text-align: center;
-		padding: 2rem;
-		color: #666;
-	}
-
-	.issue-card {
-		border: 1px solid #ddd;
-		border-radius: 8px;
-		padding: 1rem;
-		margin-bottom: 1rem;
-		background-color: white;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-	}
-
-	.student-info {
-		margin-top: 1rem;
-		padding-top: 1rem;
-		border-top: 1px solid #eee;
-	}
-</style>

@@ -109,7 +109,7 @@ func insertStudent(db *sql.DB, student *protobuf.Student) (int64, error) {
 func GetIssues(db *sql.DB) (*protobuf.IssueList, error) {
 	checkConnection(db)
 
-	result, err := db.Query(`SELECT s.firstName, s.lastName, s.year, s.section, s.course, s.professor, i.labRoom, i.pcNumber, i.concern, i.timestamp, i.issues, i.status FROM Students s INNER JOIN Issues i ON s.id = i.studentId`)
+	result, err := db.Query(`SELECT s.firstName, s.lastName, s.year, s.section, s.course, s.professor, i.labRoom, i.pcNumber, i.concern, i.timestamp, i.issues, i.status, i.id FROM Students s INNER JOIN Issues i ON s.id = i.studentId`)
 	if err != nil {
 		return nil, err
 	}
@@ -134,6 +134,7 @@ func GetIssues(db *sql.DB) (*protobuf.IssueList, error) {
 			&issue.Timestamp,
 			&idk,
 			&issue.Status,
+			&issue.Id,
 		)
 		if err != nil {
 			return nil, err
