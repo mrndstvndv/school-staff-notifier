@@ -46,7 +46,7 @@ class IssueReporter {
 			const response = await fetch("http://localhost:3333/reportIssue", {
 				method: 'POST',
 				headers: {
-					'Content-Type': 'application/octet-stream',
+					'Content-Type': 'application/x-protobuf',
 				},
 				body: Issue.encode(issueData).finish(),
 			});
@@ -54,9 +54,6 @@ class IssueReporter {
 			if (!response.ok) {
 				throw new Error('Failed to report issue');
 			}
-
-			//const json = await response.json();
-			//console.debug('Issue reported successfully:', json);
 		} catch (error) {
 			console.error('Failed to report issue:', error);
 		}

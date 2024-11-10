@@ -31,7 +31,7 @@ func (c *Client) writePump() {
 				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
-			c.conn.WriteMessage(websocket.TextMessage, message)
+			c.conn.WriteMessage(websocket.BinaryMessage, message)
 		}
 	}
 }
@@ -47,7 +47,7 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	}
 
 	client := &Client{
-		hub: hub,
+		hub:  hub,
 		conn: conn,
 		send: make(chan []byte, 256),
 	}

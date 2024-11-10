@@ -2,6 +2,7 @@
 	import { onMount } from "svelte";
 	import "../app.css";
 	import type { PageData } from "./+page";
+	import { Issue } from "$lib/types/issues";
 
 	export let data: PageData;
 	let issues = data.issues;
@@ -12,6 +13,8 @@
 			let ws = new WebSocket("http://localhost:3333/ws");
 			console.log("Connecting to websocket");
 
+			ws.binaryType = "arraybuffer";
+
 			ws.onopen = () => {
 				console.debug("Connected to websocket");
 
@@ -21,8 +24,17 @@
 				};
 			};
 
-			ws.onmessage = (msg) => {
-				console.debug("Got message:", msg);
+			ws.onmessage = (evt) => {
+				if (evt.data instanceof ArrayBuffer) {
+					let arr = new Uint8Array(evt.data);
+					issues = issues.concat(Issue.decode(arr));
+				} else {
+					console.debug("Received message", evt.data);
+				}
+			};
+
+			ws.onerror = (evt) => {
+				console.debug("Websocket error", evt);
 			};
 
 			ws.onclose = (evt) => {
@@ -46,7 +58,7 @@
 	{#if issues.length === 0}
 		<p class="no-issues">No issues found</p>
 	{:else}
-		{#each issues as issue}
+		{#each issues.reverse() as issue}
 			<div class="bg-white overflow-hidden shadow rounded-lg mt-6 mb-6">
 				<div class="px-4 py-5 sm:p-6 grid gap-4">
 					<div class="flex items-center">
