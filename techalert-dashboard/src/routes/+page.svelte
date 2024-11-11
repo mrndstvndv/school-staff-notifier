@@ -32,7 +32,7 @@
 	onMount(async () => {
 		// TODO: Notify system for new issues
 		if (window.WebSocket) {
-			ws = new WebSocket("http://localhost:3333/ws");
+			ws = new WebSocket("http://192.168.1.9:3333/ws");
 			console.log("Connecting to websocket");
 
 			ws.binaryType = "arraybuffer";

@@ -86,9 +86,14 @@ func checkConnection(conn *sql.DB) error {
 func getStudentID(db *sql.DB, student *protobuf.Student) (int64, bool, error) {
 	checkConnection(db)
 
+	if (student) == nil {
+		log.Fatalf("Student is nil")
+	}
+
 	var id int64
 	err := db.QueryRow(`SELECT id FROM Students WHERE firstName = ? AND lastName = ? AND year = ? AND section = ? AND course = ? AND professor = ?`,
 		student.FirstName, student.LastName, student.Year, student.Section, student.Course, student.Professor).Scan(&id)
+
 	if err == sql.ErrNoRows {
 		return 0, false, nil
 	}

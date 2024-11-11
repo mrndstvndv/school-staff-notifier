@@ -5,7 +5,7 @@
   "identifier": "com.techalert-report.app",
   "build": {
     "beforeDevCommand": "bun run dev",
-    "devUrl": "http://localhost:1420",
+    "devUrl": "http://localhost:8080",
     "beforeBuildCommand": "bun run build",
     "frontendDist": "../dist"
   },
@@ -15,8 +15,7 @@
       {
         "title": "techalert-report",
         "width": 800,
-        "height": 600
-        
+        "height": 650
       }
     ],
     "security": {
