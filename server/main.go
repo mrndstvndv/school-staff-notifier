@@ -127,7 +127,12 @@ func getIssues(writer http.ResponseWriter, request *http.Request) {
 
 	utils.LogDebug("Sending issues: %s", issues.Issues)
 
-	writer.Header().Add("Content-Type", "application/x-protobuf")
+	utils.LogDebug("Origin: %s", request.Header.Get("Origin"))
+
+	writer.Header().Set("Access-Control-Allow-Origin", request.Header.Get("Origin"))
+	writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+	writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+	writer.Header().Set("Content-Type", "application/x-protobuf")
 	writer.Write(byte)
 }
 
