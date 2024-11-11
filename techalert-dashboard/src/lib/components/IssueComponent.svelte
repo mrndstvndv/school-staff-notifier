@@ -4,8 +4,9 @@
 	export let issue: Issue;
 
 	function handleIssueToggle(issueIndex: number) {
-		issue.issues[issueIndex] = "Test";
+		issue.status = issue.status === 1 ? 0 : 1;
 		issue = { ...issue };
+		console.log(issue?.status);
 	}
 </script>
 
@@ -14,15 +15,12 @@
 >
 	<header class="flex items-center gap-4 mb-6">
 		<div
-			class="flex items-center justify-center w-12 h-12 bg-{issue.status ===
-			0
-				? 'red'
-				: 'green'}-100 rounded-full"
+			class="flex items-center justify-center w-12 h-12 {issue.status === 0 ? 'bg-red-100' : 'bg-green-100'} rounded-full"
 		>
 			<!-- TODO: when the status is 1 then it should be blue  -->
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
-				class="w-6 h-6 text-{issue.status === 0 ? 'red' : 'green'}-600"
+				class="w-6 h-6 {issue.status === 0 ? 'text-red-600' : 'text-green-600'}"
 				viewBox="0 0 24 24"
 				fill="none"
 				stroke="currentColor"

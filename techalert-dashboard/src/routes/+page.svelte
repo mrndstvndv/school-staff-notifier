@@ -1,10 +1,12 @@
 <script lang="ts">
-	import { onMount } from "svelte";
+	import { onDestroy, onMount } from "svelte";
 	import "../app.css";
 	import type { PageData } from "./+page";
 	import { Issue } from "$lib/types/issues";
 	import IssueComponent from "$lib/components/IssueComponent.svelte";
+	import { invoke } from "@tauri-apps/api/core";
 
+	let ws: WebSocket | null = null;
 	export let data: PageData;
 	let issues = data.issues;
 	let sortDirection: "asc" | "desc" = "desc";
@@ -19,27 +21,35 @@
 		sortDirection = sortDirection === "asc" ? "desc" : "asc";
 	}
 
+	onDestroy(() => {
+		console.debug("Closing websocket");
+
+		if (ws !== null) {
+			ws.close();
+		}
+	});
+
 	onMount(async () => {
 		// TODO: Notify system for new issues
 		if (window.WebSocket) {
-			let ws = new WebSocket("http://localhost:3333/ws");
+			ws = new WebSocket("http://localhost:3333/ws");
 			console.log("Connecting to websocket");
 
 			ws.binaryType = "arraybuffer";
 
 			ws.onopen = () => {
 				console.debug("Connected to websocket");
-
-				window.onclose = () => {
-					console.debug("Closing websocket");
-					ws.close();
-				};
 			};
 
 			ws.onmessage = (evt) => {
 				if (evt.data instanceof ArrayBuffer) {
 					let arr = new Uint8Array(evt.data);
-					issues = issues.concat(Issue.decode(arr));
+					let issue = Issue.decode(arr);
+					issues = issues.concat(issue);
+					invoke("notify", {
+						title: `New Issue: PC-${issue.pcNumber} on ${issue.labRoom}`,
+						body: `${issue.concern === "" ? "A new issue has been reported" : issue.concern}`,
+					});
 				} else {
 					console.debug("Received message", evt.data);
 				}
