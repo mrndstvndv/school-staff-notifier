@@ -1,12 +1,14 @@
 import { APIENDPOINT } from "$lib/constants";
 import { Issue, IssueList } from "$lib/types/issues";
+import { fetch } from "@tauri-apps/plugin-http";
 
 export type PageData = {
 	issues: Issue[];
 	error: string;
 };
 
-export const load: ({ fetch }: { fetch: any; }) => Promise<PageData> = async ({ fetch }) => {
+export const load: () => Promise<PageData> = async () => {
+	let error = "";
 	try {
 		let res = await fetch(`${APIENDPOINT}/getIssues`, {
 			method: "GET",
@@ -25,12 +27,13 @@ export const load: ({ fetch }: { fetch: any; }) => Promise<PageData> = async ({ 
 			issues: issueList.issues,
 			error: ""
 		}
-	} catch (error) {
-		console.debug("Failed to report issue:", error);
+	} catch (e) {
+		console.debug("Failed to report issue:", e);
+		error = `Failed to get issues: ${e}`;
 	}
 
 	return {
 		issues: [],
-		error: "Failed to get issues"
+		error: error
 	};
 }
