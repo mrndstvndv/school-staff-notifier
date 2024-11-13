@@ -9,39 +9,6 @@ import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 
 export const protobufPackage = "main";
 
-export enum Status {
-  OPEN = 0,
-  CLOSED = 1,
-  UNRECOGNIZED = -1,
-}
-
-export function statusFromJSON(object: any): Status {
-  switch (object) {
-    case 0:
-    case "OPEN":
-      return Status.OPEN;
-    case 1:
-    case "CLOSED":
-      return Status.CLOSED;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return Status.UNRECOGNIZED;
-  }
-}
-
-export function statusToJSON(object: Status): string {
-  switch (object) {
-    case Status.OPEN:
-      return "OPEN";
-    case Status.CLOSED:
-      return "CLOSED";
-    case Status.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
-}
-
 export interface Student {
   firstName: string;
   lastName: string;
@@ -51,15 +18,21 @@ export interface Student {
   year: number;
 }
 
+export interface FaultyComponent {
+  name: string;
+  fixed: boolean;
+  parentId: number;
+  id: number;
+}
+
 export interface Issue {
   student: Student | undefined;
-  status: Status;
   labRoom: string;
   concern: string;
   timestamp: string;
   pcNumber: number;
   id: number;
-  issues: string[];
+  faultyComponents: FaultyComponent[];
 }
 
 export interface IssueList {
@@ -206,8 +179,116 @@ export const Student: MessageFns<Student> = {
   },
 };
 
+function createBaseFaultyComponent(): FaultyComponent {
+  return { name: "", fixed: false, parentId: 0, id: 0 };
+}
+
+export const FaultyComponent: MessageFns<FaultyComponent> = {
+  encode(message: FaultyComponent, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    if (message.fixed !== false) {
+      writer.uint32(16).bool(message.fixed);
+    }
+    if (message.parentId !== 0) {
+      writer.uint32(24).int64(message.parentId);
+    }
+    if (message.id !== 0) {
+      writer.uint32(32).int64(message.id);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): FaultyComponent {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFaultyComponent();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.fixed = reader.bool();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.parentId = longToNumber(reader.int64());
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.id = longToNumber(reader.int64());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): FaultyComponent {
+    return {
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      fixed: isSet(object.fixed) ? globalThis.Boolean(object.fixed) : false,
+      parentId: isSet(object.parentId) ? globalThis.Number(object.parentId) : 0,
+      id: isSet(object.id) ? globalThis.Number(object.id) : 0,
+    };
+  },
+
+  toJSON(message: FaultyComponent): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.fixed !== false) {
+      obj.fixed = message.fixed;
+    }
+    if (message.parentId !== 0) {
+      obj.parentId = Math.round(message.parentId);
+    }
+    if (message.id !== 0) {
+      obj.id = Math.round(message.id);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<FaultyComponent>, I>>(base?: I): FaultyComponent {
+    return FaultyComponent.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<FaultyComponent>, I>>(object: I): FaultyComponent {
+    const message = createBaseFaultyComponent();
+    message.name = object.name ?? "";
+    message.fixed = object.fixed ?? false;
+    message.parentId = object.parentId ?? 0;
+    message.id = object.id ?? 0;
+    return message;
+  },
+};
+
 function createBaseIssue(): Issue {
-  return { student: undefined, status: 0, labRoom: "", concern: "", timestamp: "", pcNumber: 0, id: 0, issues: [] };
+  return { student: undefined, labRoom: "", concern: "", timestamp: "", pcNumber: 0, id: 0, faultyComponents: [] };
 }
 
 export const Issue: MessageFns<Issue> = {
@@ -215,26 +296,23 @@ export const Issue: MessageFns<Issue> = {
     if (message.student !== undefined) {
       Student.encode(message.student, writer.uint32(10).fork()).join();
     }
-    if (message.status !== 0) {
-      writer.uint32(16).int32(message.status);
-    }
     if (message.labRoom !== "") {
-      writer.uint32(26).string(message.labRoom);
+      writer.uint32(18).string(message.labRoom);
     }
     if (message.concern !== "") {
-      writer.uint32(34).string(message.concern);
+      writer.uint32(26).string(message.concern);
     }
     if (message.timestamp !== "") {
-      writer.uint32(42).string(message.timestamp);
+      writer.uint32(34).string(message.timestamp);
     }
     if (message.pcNumber !== 0) {
-      writer.uint32(48).int32(message.pcNumber);
+      writer.uint32(40).int32(message.pcNumber);
     }
     if (message.id !== 0) {
-      writer.uint32(64).int64(message.id);
+      writer.uint32(48).int64(message.id);
     }
-    for (const v of message.issues) {
-      writer.uint32(74).string(v!);
+    for (const v of message.faultyComponents) {
+      FaultyComponent.encode(v!, writer.uint32(58).fork()).join();
     }
     return writer;
   },
@@ -255,11 +333,11 @@ export const Issue: MessageFns<Issue> = {
           continue;
         }
         case 2: {
-          if (tag !== 16) {
+          if (tag !== 18) {
             break;
           }
 
-          message.status = reader.int32() as any;
+          message.labRoom = reader.string();
           continue;
         }
         case 3: {
@@ -267,7 +345,7 @@ export const Issue: MessageFns<Issue> = {
             break;
           }
 
-          message.labRoom = reader.string();
+          message.concern = reader.string();
           continue;
         }
         case 4: {
@@ -275,15 +353,15 @@ export const Issue: MessageFns<Issue> = {
             break;
           }
 
-          message.concern = reader.string();
+          message.timestamp = reader.string();
           continue;
         }
         case 5: {
-          if (tag !== 42) {
+          if (tag !== 40) {
             break;
           }
 
-          message.timestamp = reader.string();
+          message.pcNumber = reader.int32();
           continue;
         }
         case 6: {
@@ -291,23 +369,15 @@ export const Issue: MessageFns<Issue> = {
             break;
           }
 
-          message.pcNumber = reader.int32();
-          continue;
-        }
-        case 8: {
-          if (tag !== 64) {
-            break;
-          }
-
           message.id = longToNumber(reader.int64());
           continue;
         }
-        case 9: {
-          if (tag !== 74) {
+        case 7: {
+          if (tag !== 58) {
             break;
           }
 
-          message.issues.push(reader.string());
+          message.faultyComponents.push(FaultyComponent.decode(reader, reader.uint32()));
           continue;
         }
       }
@@ -322,13 +392,14 @@ export const Issue: MessageFns<Issue> = {
   fromJSON(object: any): Issue {
     return {
       student: isSet(object.student) ? Student.fromJSON(object.student) : undefined,
-      status: isSet(object.status) ? statusFromJSON(object.status) : 0,
       labRoom: isSet(object.labRoom) ? globalThis.String(object.labRoom) : "",
       concern: isSet(object.concern) ? globalThis.String(object.concern) : "",
       timestamp: isSet(object.timestamp) ? globalThis.String(object.timestamp) : "",
       pcNumber: isSet(object.pcNumber) ? globalThis.Number(object.pcNumber) : 0,
       id: isSet(object.id) ? globalThis.Number(object.id) : 0,
-      issues: globalThis.Array.isArray(object?.issues) ? object.issues.map((e: any) => globalThis.String(e)) : [],
+      faultyComponents: globalThis.Array.isArray(object?.faultyComponents)
+        ? object.faultyComponents.map((e: any) => FaultyComponent.fromJSON(e))
+        : [],
     };
   },
 
@@ -336,9 +407,6 @@ export const Issue: MessageFns<Issue> = {
     const obj: any = {};
     if (message.student !== undefined) {
       obj.student = Student.toJSON(message.student);
-    }
-    if (message.status !== 0) {
-      obj.status = statusToJSON(message.status);
     }
     if (message.labRoom !== "") {
       obj.labRoom = message.labRoom;
@@ -355,8 +423,8 @@ export const Issue: MessageFns<Issue> = {
     if (message.id !== 0) {
       obj.id = Math.round(message.id);
     }
-    if (message.issues?.length) {
-      obj.issues = message.issues;
+    if (message.faultyComponents?.length) {
+      obj.faultyComponents = message.faultyComponents.map((e) => FaultyComponent.toJSON(e));
     }
     return obj;
   },
@@ -369,13 +437,12 @@ export const Issue: MessageFns<Issue> = {
     message.student = (object.student !== undefined && object.student !== null)
       ? Student.fromPartial(object.student)
       : undefined;
-    message.status = object.status ?? 0;
     message.labRoom = object.labRoom ?? "";
     message.concern = object.concern ?? "";
     message.timestamp = object.timestamp ?? "";
     message.pcNumber = object.pcNumber ?? 0;
     message.id = object.id ?? 0;
-    message.issues = object.issues?.map((e) => e) || [];
+    message.faultyComponents = object.faultyComponents?.map((e) => FaultyComponent.fromPartial(e)) || [];
     return message;
   },
 };

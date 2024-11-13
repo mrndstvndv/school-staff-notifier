@@ -1,7 +1,7 @@
 import { fetch } from "@tauri-apps/plugin-http";
-import { Issue } from "./issues";
+import { FaultyComponent, Issue } from "$lib/types/issues";
 
-class IssueReporter {
+export class IssueReporter {
 	private form: HTMLFormElement;
 
 	constructor() {
@@ -17,7 +17,12 @@ class IssueReporter {
 
 	private getFormData(): Issue {
 		const issueCheckboxes = document.querySelectorAll('input[type="checkbox"]:checked');
-		const issues = Array.from(issueCheckboxes).map(checkbox => (checkbox as HTMLInputElement).nextElementSibling?.textContent || '');
+		const faultyComponents: FaultyComponent[] = Array.from(issueCheckboxes).map((checkbox) => ({
+			name: (checkbox as HTMLInputElement).nextElementSibling?.textContent || '',
+			parentId: 0,
+			id: 0,
+			fixed: false,
+		}));
 
 		return {
 			student: {
@@ -31,17 +36,16 @@ class IssueReporter {
 			},
 			labRoom: (document.getElementById('lab-room') as HTMLSelectElement).value,
 			pcNumber: parseInt((document.getElementById('pc-number') as HTMLInputElement).value),
-			issues: issues,
+			faultyComponents: faultyComponents,
 			timestamp: Date.now().toString(),
 			concern: (document.querySelector('textarea') as HTMLTextAreaElement).value,
 			id: 0,
-			status: 0,
 		};
 	}
 
 	private async postIssue(issueData: Issue): Promise<void> {
-		console.debug('Posting issue:', issueData);
-		console.debug('Encoded issue:', Issue.encode(issueData).finish());
+		console.log('Posting issue:', issueData);
+		console.log('Encoded issue:', Issue.encode(issueData).finish());
 
 		try {
 			const response = await fetch("http://localhost:3333/reportIssue", {
@@ -68,8 +72,3 @@ class IssueReporter {
 		await this.postIssue(issueData);
 	}
 }
-
-// Initialize the issue reporter when the DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-	new IssueReporter();
-});
