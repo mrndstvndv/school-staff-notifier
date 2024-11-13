@@ -10,7 +10,7 @@ export type PageData = {
 export const load: () => Promise<PageData> = async () => {
 	let error = "";
 	try {
-		let res = await fetch(`${APIENDPOINT}/getIssues`, {
+		let res = await fetch(`http://${APIENDPOINT}/getIssues`, {
 			method: "GET",
 			headers: {
 				"Content-Type": "application/x-protobuf",

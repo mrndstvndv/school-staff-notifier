@@ -1,12 +1,16 @@
 <script lang="ts">
-	import type { Issue } from "$lib/types/issues";
+	import { Issue } from "$lib/types/issues";
 
 	export let issue: Issue;
 
+	// TODO: update database of issue toggle
 	function handleIssueToggle(issueIndex: number) {
-		issue.status = issue.status === 1 ? 0 : 1;
-		issue = { ...issue };
-		console.log(issue?.status);
+		issue.faultyComponents[issueIndex].fixed =
+			!issue.faultyComponents[issueIndex].fixed;
+	}
+
+	function isFixed() {
+		return issue.faultyComponents.every((item) => item.fixed === true);
 	}
 </script>
 
@@ -15,12 +19,14 @@
 >
 	<header class="flex items-center gap-4 mb-6">
 		<div
-			class="flex items-center justify-center w-12 h-12 {issue.status === 0 ? 'bg-red-100' : 'bg-green-100'} rounded-full"
+			class="flex items-center justify-center w-12 h-12 {isFixed()
+				? 'bg-green-100'
+				: 'bg-red-100'} rounded-full"
 		>
 			<!-- TODO: when the status is 1 then it should be blue  -->
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
-				class="w-6 h-6 {issue.status === 0 ? 'text-red-600' : 'text-green-600'}"
+				class="w-6 h-6 {isFixed() ? 'text-green-600' : 'text-red-600'}"
 				viewBox="0 0 24 24"
 				fill="none"
 				stroke="currentColor"
@@ -51,24 +57,26 @@
 		</div>
 	{/if}
 
-	<div>
-		<h2 class="text-lg font-medium text-gray-900 mb-3">Issues</h2>
-		<div class="space-y-2">
-			{#each issue.issues as item, index}
-				<label
-					class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors"
-				>
-					<!-- TODO: checked={issue.checked} -->
-					<input
-						type="checkbox"
-						on:change={() => handleIssueToggle(index)}
-						class="w-5 h-5 rounded border-gray-300 text-red-600 focus:ring-red-500"
-					/>
-					<span class="text-gray-700">{item}</span>
-				</label>
-			{/each}
+	{#if issue.faultyComponents.length > 0}
+		<div>
+			<h2 class="text-lg font-medium text-gray-900 mb-3">Issues</h2>
+			<div class="space-y-2">
+				{#each issue.faultyComponents as item, index}
+					<label
+						class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors"
+					>
+						<input
+							type="checkbox"
+							checked={item.fixed}
+							on:change={() => handleIssueToggle(index)}
+							class="w-5 h-5 rounded border-gray-300 text-red-600 focus:ring-red-500"
+						/>
+						<span class="text-gray-700">{item.name}</span>
+					</label>
+				{/each}
+			</div>
 		</div>
-	</div>
+	{/if}
 </div>
 
 <style>

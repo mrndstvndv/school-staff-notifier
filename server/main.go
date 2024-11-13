@@ -46,7 +46,10 @@ func main() {
 	defer conn.Close()
 
 	utils.LogDebug("Creating table")
-	db.CreateTable(conn)
+	err := db.CreateTable(conn)
+	if err != nil {
+		log.Printf("Unable to create table: %s\n", err)
+	}
 
 	if len(os.Args) < 2 {
 		log.Printf("Number is not passed, disabling sending a message. Usage: %s [number]\n", os.Args[0])
@@ -126,7 +129,6 @@ func getIssues(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	utils.LogDebug("Sending issues: %s", issues.Issues)
-
 	utils.LogDebug("Origin: %s", request.Header.Get("Origin"))
 
 	writer.Header().Set("Access-Control-Allow-Origin", request.Header.Get("Origin"))
@@ -155,7 +157,7 @@ func reportIssue(writer http.ResponseWriter, request *http.Request) {
 		log.Fatalf("Unable to insert issue: %s\n", err)
 	}
 
-	utils.LogDebug("Received issue: %s", issue.Issues)
+	utils.LogDebug("Received issue: %v", &issue)
 
 	id, err := db.InsertIssue(conn, &issue)
 	if err != nil {

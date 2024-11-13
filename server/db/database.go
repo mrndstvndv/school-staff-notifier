@@ -4,7 +4,6 @@ import (
 	"bongserver/protobuf"
 	"bongserver/utils"
 	"database/sql"
-	"encoding/json"
 	"log"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -39,36 +38,42 @@ CREATE TABLE IF NOT EXISTS class (
 */
 func CreateTable(conn *sql.DB) error {
 	result, err := conn.Exec(`
-		CREATE TABLE IF NOT EXISTS Students (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			firstName TEXT NOT NULL,
-			lastName TEXT NOT NULL,
-			year INTEGER NOT NULL,
-			section TEXT NOT NULL,
-			course TEXT NOT NULL,
-			professor TEXT NOT NULL
-		);
+	CREATE TABLE IF NOT EXISTS students (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		first_name TEXT NOT NULL,
+		last_name TEXT NOT NULL,
+		section TEXT NOT NULL,
+		course TEXT NOT NULL,
+		professor TEXT NOT NULL,
+		year INTEGER NOT NULL
+	);
 
-		CREATE TABLE IF NOT EXISTS Issues (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			studentId INTEGER NOT NULL,
-			labRoom TEXT NOT NULL,
-			pcNumber INTEGER NOT NULL,
-			concern TEXT NOT NULL,
-			timestamp TEXT NOT NULL,
-			issues TEXT NOT NULL,
-			status INTEGER NOT NULL DEFAULT 0,
-			FOREIGN KEY (studentId) REFERENCES students(id)
-		);
+	CREATE TABLE IF NOT EXISTS issues (
+		id INTEGER PRIMARY KEY,
+		lab_room TEXT NOT NULL,
+		concern TEXT NOT NULL,
+		timestamp TEXT NOT NULL,
+		pc_number INTEGER NOT NULL,
+		student_id INTEGER NOT NULL,
+		FOREIGN KEY (student_id) REFERENCES students(id)
+	);
 
-		CREATE TABLE IF NOT EXISTS class (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			year INTEGER NOT NULL,
-			section TEXT NOT NULL,
-			course TEXT NOT NULL,
-			professor TEXT NOT NULL
-		);
+	CREATE TABLE IF NOT EXISTS faulty_components (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL,
+		fixed BOOLEAN NOT NULL DEFAULT 0,
+		parent_id INTEGER NOT NULL,
+		FOREIGN KEY (parent_id) REFERENCES issues(id)
+	);
+
+	-- Create indexes for better query performance
+	CREATE INDEX idx_issues_student ON issues(student_id);
+	CREATE INDEX idx_components_parent ON faulty_components(parent_id);
 	`)
+
+	if err != nil {
+		return err
+	}
 
 	rowsAffected, err := result.RowsAffected()
 	utils.LogDebug("Rows affected: %d", rowsAffected)
@@ -91,7 +96,7 @@ func getStudentID(db *sql.DB, student *protobuf.Student) (int64, bool, error) {
 	}
 
 	var id int64
-	err := db.QueryRow(`SELECT id FROM Students WHERE firstName = ? AND lastName = ? AND year = ? AND section = ? AND course = ? AND professor = ?`,
+	err := db.QueryRow(`SELECT id FROM students WHERE first_name = ? AND last_name = ? AND year = ? AND section = ? AND course = ? AND professor = ?`,
 		student.FirstName, student.LastName, student.Year, student.Section, student.Course, student.Professor).Scan(&id)
 
 	if err == sql.ErrNoRows {
@@ -103,18 +108,40 @@ func getStudentID(db *sql.DB, student *protobuf.Student) (int64, bool, error) {
 func insertStudent(db *sql.DB, student *protobuf.Student) (int64, error) {
 	checkConnection(db)
 
-	result, err := db.Exec(`INSERT INTO Students (firstName, lastName, year, section, course, professor) VALUES (?, ?, ?, ?, ?, ?)`,
+	result, err := db.Exec(`INSERT INTO students (first_name, last_name, year, section, course, professor) VALUES (?, ?, ?, ?, ?, ?)`,
 		student.FirstName, student.LastName, student.Year, student.Section, student.Course, student.Professor)
 	if err != nil {
 		return 0, err
 	}
-	return result.LastInsertId()
+	issueID, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+
+	return issueID, nil
+}
+
+// insertFaultyComponents inserts all faulty components for a given issue
+func insertFaultyComponents(db *sql.DB, issueID int64, components []*protobuf.FaultyComponent) error {
+	if len(components) == 0 {
+		return nil
+	}
+
+	for _, component := range components {
+		_, err := db.Exec(`INSERT INTO faulty_components (name, fixed, parent_id) VALUES (?, ?, ?)`,
+			component.Name, component.Fixed, issueID)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func GetIssues(db *sql.DB) (*protobuf.IssueList, error) {
 	checkConnection(db)
 
-	result, err := db.Query(`SELECT s.firstName, s.lastName, s.year, s.section, s.course, s.professor, i.labRoom, i.pcNumber, i.concern, i.timestamp, i.issues, i.status, i.id FROM Students s INNER JOIN Issues i ON s.id = i.studentId`)
+	result, err := db.Query(`SELECT s.first_name, s.last_name, s.year, s.section, s.course, s.professor, i.lab_room, i.pc_number, i.concern, i.timestamp, i.id FROM students s INNER JOIN issues i ON s.id = i.student_id`)
 	if err != nil {
 		return nil, err
 	}
@@ -122,9 +149,7 @@ func GetIssues(db *sql.DB) (*protobuf.IssueList, error) {
 
 	var issues []*protobuf.Issue
 	for result.Next() {
-		// TODO: rename idk
 		issue := &protobuf.Issue{Student: &protobuf.Student{}}
-		var idk string
 
 		err := result.Scan(
 			&issue.Student.FirstName,
@@ -137,18 +162,21 @@ func GetIssues(db *sql.DB) (*protobuf.IssueList, error) {
 			&issue.PcNumber,
 			&issue.Concern,
 			&issue.Timestamp,
-			&idk,
-			&issue.Status,
 			&issue.Id,
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		err = json.Unmarshal([]byte(idk), &issue.Issues)
+		log.Print("Got here\n")
+
+		faultyComponents, err := getFaultyComponents(db, issue.Id)
 		if err != nil {
 			return nil, err
 		}
+
+		issue.FaultyComponents = faultyComponents
+		log.Printf("%d Faulty Components: %v", issue.Id, faultyComponents)
 
 		issues = append(issues, issue)
 	}
@@ -161,20 +189,37 @@ func GetIssues(db *sql.DB) (*protobuf.IssueList, error) {
 	return &protobuf.IssueList{Issues: issues}, nil
 }
 
-func UpdateIssueStatus(db *sql.DB, id int64, status int32) error {
-	checkConnection(db)
+// getFaultyComponents retrieves all faulty components for a given issue ID
+func getFaultyComponents(db *sql.DB, issueID int64) ([]*protobuf.FaultyComponent, error) {
+	rows, err := db.Query(`
+		SELECT id, name, fixed, parent_id 
+		FROM faulty_components 
+		WHERE id = ?
+	`, issueID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
-	_, err := db.Exec(`UPDATE Issues SET status = ? WHERE id = ?`, status, id)
-	return err
+	var components []*protobuf.FaultyComponent
+
+	for rows.Next() {
+		component := &protobuf.FaultyComponent{}
+		err := rows.Scan(&component.Id, &component.Name, &component.Fixed, &component.ParentId)
+		if err != nil {
+			return nil, err
+		}
+
+		components = append(components, component)
+	}
+
+	log.Printf("Components: %v", components)
+
+	return components, nil
 }
 
 func InsertIssue(db *sql.DB, issue *protobuf.Issue) (int64, error) {
 	checkConnection(db)
-
-	issuesJSON, err := json.Marshal(issue.Issues)
-	if err != nil {
-		return 0, err
-	}
 
 	studentID, exists, err := getStudentID(db, issue.Student)
 	if err != nil {
@@ -188,8 +233,16 @@ func InsertIssue(db *sql.DB, issue *protobuf.Issue) (int64, error) {
 		}
 	}
 
-	result, err := db.Exec(`INSERT INTO Issues (studentId, labRoom, pcNumber, concern, timestamp, issues) VALUES (?, ?, ?, ?, ?, ?)`,
-		studentID, issue.LabRoom, issue.PcNumber, issue.Concern, issue.Timestamp, string(issuesJSON))
+	result, err := db.Exec(`INSERT INTO issues (student_id, lab_room, pc_number, concern, timestamp) VALUES (?, ?, ?, ?, ?)`,
+		studentID, issue.LabRoom, issue.PcNumber, issue.Concern, issue.Timestamp)
+	if err != nil {
+		return 0, err
+	}
+
+	err = insertFaultyComponents(db, issue.Id, issue.FaultyComponents)
+	if err != nil {
+		return 0, err
+	}
 
 	return result.LastInsertId()
 }

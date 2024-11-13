@@ -13,20 +13,21 @@ message Student {
   int32 year = 6;
 };
 
-enum Status {
-  OPEN = 0;
-  CLOSED = 1;
-};
+message FaultyComponent {
+  string name = 1;
+  bool fixed = 2;
+  int64 parentId = 3;
+  int64 id = 4;
+}
 
 message Issue {
   Student student = 1;
-  Status status = 2;
-  string labRoom = 3;
-  string concern = 4;
-  string timestamp = 5;
-  int32 pcNumber = 6;
-  int64 id = 8;
-  repeated string issues = 9;
+  string labRoom = 2;
+  string concern = 3;
+  string timestamp = 4;
+  int32 pcNumber = 5;
+  int64 id = 6;
+  repeated FaultyComponent faultyComponents = 7;
 };
 
 message IssueList { repeated Issue issues = 1; };

@@ -6,6 +6,7 @@
 	import IssueComponent from "$lib/components/IssueComponent.svelte";
 	import { invoke } from "@tauri-apps/api/core";
 	import WebSocket from "@tauri-apps/plugin-websocket";
+    import { APIENDPOINT } from "$lib/constants";
 
 	let ws: WebSocket | null = null;
 	export let data: PageData;
@@ -31,8 +32,13 @@
 	});
 
 	onMount(async () => {
+
+		for (let i = 0; i < issues.length; i++) {
+			console.log(issues[i]);
+		}
+
 		if (window.WebSocket) {
-			ws = await WebSocket.connect("ws://192.168.1.9:3333/ws");
+			ws = await WebSocket.connect(`ws://${APIENDPOINT}/ws`);
 			console.log("Connecting to websocket");
 
 			ws.addListener((msg) => {
@@ -47,34 +53,6 @@
 					console.debug("Received message", msg.data);
 				}
 			});
-
-			//ws.binaryType = "arraybuffer";
-			//
-			//ws.onopen = () => {
-			//	console.debug("Connected to websocket");
-			//};
-			//
-			//ws.onmessage = (evt) => {
-			//	if (evt.data instanceof ArrayBuffer) {
-			//		let arr = new Uint8Array(evt.data);
-			//		let issue = Issue.decode(arr);
-			//		issues = issues.concat(issue);
-			//		invoke("notify", {
-			//			title: `New Issue: PC-${issue.pcNumber} on ${issue.labRoom}`,
-			//			body: `${issue.concern === "" ? "A new issue has been reported" : issue.concern}`,
-			//		});
-			//	} else {
-			//		console.debug("Received message", evt.data);
-			//	}
-			//};
-			//
-			//ws.onerror = (evt) => {
-			//	console.debug("Websocket error", evt);
-			//};
-			//
-			//ws.onclose = (evt) => {
-			//	console.debug("Websocket closed", evt);
-			//};
 		} else {
 			console.debug("Websocket not supported");
 		}
@@ -82,50 +60,53 @@
 </script>
 
 <div class="issues-container">
+	<header class="border-b bg-white">
+		<div class="container flex h-14 items-center justify-between">
+			<h1 class="text-lg font-semibold">My App</h1>
+			<p>steven</p>
+		</div>
+	</header>
 	{#if data.error !== ""}
 		<p class="error">{data.error}</p>
+	{:else if issues.length === 0}
+		<p class="no-issues">No issues found</p>
 	{:else}
-		<h1 class="text-2xl font-semibold mb-4">Issues</h1>
-
-		{#if issues.length === 0}
-			<p class="no-issues">No issues found</p>
-		{:else}
-			<div class="flex justify-end mb-4">
-				<button
-					on:click={sortIssues}
-					class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium rounded-md"
+		<!--<h1 class="text-2xl font-semibold mb-4">Issues</h1>-->
+		<div class="flex justify-end mt-4 mb-4">
+			<button
+				on:click={sortIssues}
+				class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium rounded-md"
+			>
+				Sort by Date
+				<svg
+					class="ml-2 h-4 w-4"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
 				>
-					Sort by Date
-					<svg
-						class="ml-2 h-4 w-4"
-						fill="none"
-						viewBox="0 0 24 24"
-						stroke="currentColor"
-					>
-						{#if sortDirection === "asc"}
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
-							/>
-						{:else}
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"
-							/>
-						{/if}
-					</svg>
-				</button>
-			</div>
+					{#if sortDirection === "asc"}
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
+						/>
+					{:else}
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"
+						/>
+					{/if}
+				</svg>
+			</button>
+		</div>
 
-			<div class="grid m-4 gap-4">
-				{#each sortedIssues as issue (issue.id)}
-					<IssueComponent bind:issue />
-				{/each}
-			</div>
-		{/if}
+		<div class="grid m-4 gap-4">
+			{#each sortedIssues as issue}
+				<IssueComponent bind:issue />
+			{/each}
+		</div>
 	{/if}
 </div>
