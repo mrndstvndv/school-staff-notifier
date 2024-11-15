@@ -31,7 +31,7 @@ export class IssueReporter {
 				year: parseInt((document.getElementById('year') as HTMLInputElement).value),
 				section: (document.getElementById('section') as HTMLInputElement).value,
 				// WARN: Add course
-				course: "CS",
+				course: (document.getElementById('course') as HTMLInputElement).value,
 				professor: (document.getElementById('professor') as HTMLInputElement).value
 			},
 			labRoom: (document.getElementById('lab-room') as HTMLSelectElement).value,
