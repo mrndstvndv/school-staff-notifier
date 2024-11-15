@@ -90,6 +90,7 @@
 		bind:value
 		on:focus={onFocus}
 		on:input={onInput}
+		on:click={onFocus}
 		on:blur={onBlur}
 		class="w-full"
 		{name}
