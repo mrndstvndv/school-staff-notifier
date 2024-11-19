@@ -5,6 +5,12 @@
 	import { IssueReporter } from "$lib/types/IssueReporter";
 	import Search from "$lib/components/Search.svelte";
 	import Settings from "lucide-svelte/icons/settings";
+	import { LazyStore } from "@tauri-apps/plugin-store";
+
+	let store: LazyStore;
+
+	let host = "localhost";
+	let port = 8080;
 
 	const courses = [
 		"BSIT",
@@ -38,11 +44,36 @@
 	let course: string = courses[0];
 	$: professors = courseToProf.get(course) ?? [];
 
-	let form;
+	let form: HTMLFormElement;
+	let issueReporter: IssueReporter;
 
-	onMount(() => {
-		new IssueReporter();
+	onMount(async () => {
+		store = new LazyStore("settings.json");
+
+		host = (await store.get("host")) ?? host;
+		port = (await store.get("port")) ?? port;
+
+		issueReporter = new IssueReporter(host, port);
 	});
+
+	function submitDialog(event: Event) {
+		const target = event.target as HTMLFormElement;
+
+		if (target === null) throw new Error("Event target is null");
+
+		const formData = new FormData(target);
+
+		host = (formData.get("host") as string) ?? host;
+		port = Number.parseInt(formData.get("port") as string) ?? port;
+
+		store?.set("host", host);
+		store?.set("port", port);
+
+		issueReporter.setServer(host, port);
+		store.save();
+
+		settingsDialogRef.close();
+	}
 
 	let settingsDialogRef: HTMLDialogElement;
 	function onSettingsClick() {
@@ -85,12 +116,13 @@
 		<p class="text-sm mt-[6px]" style="color: hsl(240 3.8% 46.1%);">
 			Set the endpoint for the issue reporting system.
 		</p>
-		<form action="" class="py-4 grid gap-4">
+		<form class="py-4 grid gap-4" on:submit|preventDefault={submitDialog}>
 			<div class="grid grid-cols-4 items-center gap-4">
 				<label for="host" class="text-right text-sm font-medium"
 					>Host</label
 				>
 				<input
+					value={host}
 					required
 					class="col-span-3"
 					type="text"
@@ -104,6 +136,7 @@
 					>Port</label
 				>
 				<input
+					value={port}
 					required
 					class="col-span-3"
 					type="number"

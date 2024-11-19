@@ -1,10 +1,22 @@
 import { fetch } from "@tauri-apps/plugin-http";
 import { FaultyComponent, Issue } from "$lib/types/issues";
 
+type Server = {
+	host: string;
+	port: number;
+}
+
+// TODO: Make this into a component
 export class IssueReporter {
 	private form: HTMLFormElement;
+	private server: Server;
 
-	constructor() {
+	constructor(host: string, port: number) {
+		this.server = {
+			host,
+			port,
+		}
+
 		console.log('IssueReporter initialized');
 		this.form = document.getElementById('issue-form') as HTMLFormElement;
 		console.log('Form:', this.form);
@@ -13,6 +25,11 @@ export class IssueReporter {
 
 	private initializeForm(): void {
 		this.form.addEventListener('submit', this.handleSubmit.bind(this));
+	}
+
+	public setServer(host: string, port: number): void {
+		this.server.host = host;
+		this.server.port = port;
 	}
 
 	private getFormData(): Issue {
@@ -47,8 +64,11 @@ export class IssueReporter {
 		console.log('Posting issue:', issueData);
 		console.log('Encoded issue:', Issue.encode(issueData).finish());
 
+		console.log('Host:', this.server.host);
+		console.log('Port:', this.server.port);
+
 		try {
-			const response = await fetch("http://localhost:3333/reportIssue", {
+			const response = await fetch(`http://${this.server.host}:${this.server.port}/reportIssue`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/x-protobuf',
