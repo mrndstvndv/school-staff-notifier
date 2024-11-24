@@ -12,6 +12,13 @@
 	let host = "localhost";
 	let port = 8080;
 
+	let components: { name: string; enabled: boolean }[] = [
+		{ name: "Keyboard", enabled: false },
+		{ name: "Mouse", enabled: false },
+		{ name: "Monitor", enabled: false },
+		{ name: "Power Supply", enabled: false },
+	];
+
 	const courses = [
 		"BSIT",
 		"BSCS",
@@ -80,13 +87,34 @@
 		settingsDialogRef.showModal();
 	}
 
+	function onOtherInputEntered(event: KeyboardEvent) {
+		let input = event.target as HTMLInputElement;
+
+		if (event.key == "Enter") {
+			event.preventDefault();
+
+			const componentExists = components.some(
+				(component) => component.name === input.value,
+			);
+
+			if (!componentExists) {
+				components.push({
+					name: input.value,
+					enabled: true,
+				});
+			}
+
+			components = components;
+		}
+	}
+
 	// TODO: Student names should be searchable based on year/section and course
 	// TODO: Separate the student info from the reporting
 </script>
 
 <div class="min-h-screen">
 	<!-- Header -->
-	<header class="bg-[#5C4033] p-4 grid md:grid-cols-3 grid-cols-[auto,1fr]">
+	<header class="bg-[#5C4033] p-4 grid grid-cols-[auto,1fr]">
 		<div
 			class="container mx-auto flex items-center gap-4 justify-center md:col-start-2"
 		>
@@ -324,27 +352,39 @@
 							Issues
 						</p>
 						<ul class="list-none grid grid-cols-2">
+							{#each components as component (component.name)}
+								<label
+									for={component.name}
+									class="flex items-center"
+								>
+									<input
+										checked={component.enabled}
+										id={component.name}
+										type="checkbox"
+									/>
+									<span class="ml-2">{component.name}</span>
+								</label>
+							{/each}
 							<!-- TODO: Add guard for when non of the items are selected-->
-							<label for="keyboard" class="flex items-center">
-								<input id="keyboard" type="checkbox" />
-								<span class="ml-2">Keyboard</span>
-							</label>
-
-							<label for="mouse" class="flex items-center">
-								<input id="mouse" type="checkbox" />
-								<span class="ml-2">Mouse</span>
-							</label>
-
-							<label for="monitor" class="flex items-center">
-								<input id="monitor" type="checkbox" />
-								<span class="ml-2">Monitor</span>
-							</label>
-
-							<label for="powersupply" class="flex items-center">
-								<input id="powersupply" type="checkbox" />
-								<span class="ml-2">Power supply</span>
-							</label>
 						</ul>
+
+						<!-- TODO: Add ability to remove the added items -->
+						<div
+							class="py-3 flex text-sm items-center align-middle"
+						>
+							<div class="col-start-2 flex flex-col">
+								<label class="pb-1" for="other-input"
+									>Other</label
+								>
+								<input
+									id="other-input"
+									name="other-input"
+									class="h-6 col-start-3"
+									type="text"
+									on:keydown={onOtherInputEntered}
+								/>
+							</div>
+						</div>
 					</div>
 
 					<textarea
