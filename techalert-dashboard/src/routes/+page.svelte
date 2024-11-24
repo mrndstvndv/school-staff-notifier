@@ -1,12 +1,20 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
 	import "../app.css";
+	import csulogo from "$lib/assets/csulogo.png";
 	import type { PageData } from "./+page";
 	import { Issue } from "$lib/types/issues";
 	import IssueComponent from "$lib/components/IssueComponent.svelte";
 	import { invoke } from "@tauri-apps/api/core";
 	import WebSocket from "@tauri-apps/plugin-websocket";
-    import { APIENDPOINT } from "$lib/constants";
+
+	import Settings from "lucide-svelte/icons/settings";
+
+	import { Button } from "$lib/components/ui/button/index.js";
+	import * as Card from "$lib/components/ui/card/index.js";
+	import { Input } from "$lib/components/ui/input/index.js";
+	import { Label } from "$lib/components/ui/label/index.js";
+	import { LazyStore } from "@tauri-apps/plugin-store";
 
 	let ws: WebSocket | null = null;
 	export let data: PageData;
@@ -31,14 +39,20 @@
 		}
 	});
 
+	let store: LazyStore;
+
 	onMount(async () => {
+		store = new LazyStore("settings.json");
+
+		host = (await store.get("host")) ?? "";
+		port = (await store.get("port")) ?? "";
 
 		for (let i = 0; i < issues.length; i++) {
 			console.log(issues[i]);
 		}
 
 		if (window.WebSocket) {
-			ws = await WebSocket.connect(`ws://${APIENDPOINT}/ws`);
+			ws = await WebSocket.connect(`ws://${host}:${port}/ws`);
 			console.log("Connecting to websocket");
 
 			ws.addListener((msg) => {
@@ -57,15 +71,111 @@
 			console.debug("Websocket not supported");
 		}
 	});
+
+	let settingsDialogRef: null | HTMLDialogElement = null;
+	let endpointFormRef: null | HTMLFormElement = null;
+
+	let host = "";
+	let port = "";
+
+	const onSettingsClick = async () => {
+		if (settingsDialogRef === null) {
+			console.error("settingsDialogRef is null");
+			return;
+		}
+
+		let hostElement = document.getElementById("host") as HTMLInputElement;
+		hostElement.value = host as string;
+
+		let portElement = document.getElementById("port") as HTMLInputElement;
+		portElement.value = port as string;
+
+		settingsDialogRef.showModal();
+	};
+
+	const onEndpointSave = () => {
+		if (endpointFormRef === null || settingsDialogRef === null) {
+			console.error("endpointFormRef is null");
+			return;
+		}
+
+		let formData = new FormData(endpointFormRef);
+		host = (formData.get("host") as string) ?? "";
+		port = (formData.get("port") as string) ?? "";
+
+		store.set("host", host);
+		store.set("port", port);
+
+		store.save();
+
+		settingsDialogRef?.close();
+	};
 </script>
 
 <div class="issues-container">
-	<header class="border-b bg-white">
-		<div class="container flex h-14 items-center justify-between">
-			<h1 class="text-lg font-semibold">My App</h1>
-			<p>steven</p>
+	<!-- Header -->
+	<header class="bg-[#5C4033] p-4 grid grid-cols-[auto,1fr]">
+		<div
+			class="container mx-auto flex items-center gap-4 justify-center md:col-start-2"
+		>
+			<img src={csulogo} alt="University Logo" class="w-16 h-16" />
+			<h1 class="text-white text-2xl md:text-3xl font-semibold">
+				Cagayan State University
+			</h1>
+		</div>
+		<div class="flex items-center justify-end md:col-start-3 col-start-2">
+			<button
+				on:click={onSettingsClick}
+				class="hover:bg-[#4B3329] rounded-md p-2"
+			>
+				<Settings class="col-start-3" color="white" />
+			</button>
 		</div>
 	</header>
+
+	<!-- svelte-ignore a11y-click-events-have-key-events -->
+	<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+	<dialog
+		on:click|self={() => settingsDialogRef.close()}
+		class="rounded-lg border shadow-lg border-gray-300 backdrop:bg-background/80 backdrop:fixed backdrop:inset-0 backdrop:backdrop-blur-sm"
+		bind:this={settingsDialogRef}
+	>
+		<Card.Header>
+			<Card.Title>Configure server</Card.Title>
+			<Card.Description
+				>Set the server endpoint to be used for reporting</Card.Description
+			>
+		</Card.Header>
+		<Card.Content>
+			<form bind:this={endpointFormRef}>
+				<div class="grid w-full items-center gap-4">
+					<div class="flex flex-col space-y-1.5">
+						<Label for="host">Host</Label>
+						<Input id="host" name="host" placeholder="localhost" />
+					</div>
+					<div class="flex flex-col space-y-1.5">
+						<Label for="port">Port</Label>
+						<Input
+							id="port"
+							name="port"
+							type="number"
+							placeholder="8080"
+						/>
+					</div>
+				</div>
+			</form>
+		</Card.Content>
+		<Card.Footer class="flex justify-between">
+			<Button
+				on:click={() => {
+					settingsDialogRef?.close();
+				}}
+				variant="outline">Cancel</Button
+			>
+			<Button on:click={() => onEndpointSave()}>Save</Button>
+		</Card.Footer>
+	</dialog>
+
 	{#if data.error !== ""}
 		<p class="error">{data.error}</p>
 	{:else if issues.length === 0}

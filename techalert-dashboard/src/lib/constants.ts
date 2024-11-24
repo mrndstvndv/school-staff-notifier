@@ -1,1 +1,1 @@
-export const APIENDPOINT = "192.168.20.115:3333"
+export const APIENDPOINT = "192.168.1.18:3333"
