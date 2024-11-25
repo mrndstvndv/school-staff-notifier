@@ -15,6 +15,7 @@
 	import { Input } from "$lib/components/ui/input/index.js";
 	import { Label } from "$lib/components/ui/label/index.js";
 	import { LazyStore } from "@tauri-apps/plugin-store";
+	import { fetch } from "@tauri-apps/plugin-http";
 
 	let ws: WebSocket | null = null;
 	export let data: PageData;
@@ -56,13 +57,17 @@
 			console.log("Connecting to websocket");
 
 			ws.addListener((msg) => {
-				if (Array.isArray(msg.data)) {
-					let issue = Issue.decode(new Uint8Array(msg.data));
-					issues = issues.concat(issue);
-					invoke("notify", {
-						title: `New Issue: PC-${issue.pcNumber} on ${issue.labRoom}`,
-						body: `${issue.concern === "" ? "A new issue has been reported" : issue.concern}`,
-					});
+				const data = msg.data;
+				if (Array.isArray(data)) {
+					if (data[0] == 1) {
+						data.shift();
+						let issue = Issue.decode(new Uint8Array(data));
+						issues = issues.concat(issue);
+						invoke("notify", {
+							title: `New Issue: PC-${issue.pcNumber} on ${issue.labRoom}`,
+							body: `${issue.concern === "" ? "A new issue has been reported" : issue.concern}`,
+						});
+					}
 				} else {
 					console.debug("Received message", msg.data);
 				}
@@ -71,6 +76,50 @@
 			console.debug("Websocket not supported");
 		}
 	});
+
+	const onComponentToggle = async (
+		event: Event,
+		issueIndex: number,
+		componentIndex: number,
+	) => {
+		const issue = issues[issueIndex];
+		const component = issue.faultyComponents[componentIndex];
+		const status = !component.fixed;
+
+		// TODO: update database of issue toggle, do a get request
+		// TODO: componentId, status[0/1]
+
+		console.log(component.id);
+		try {
+			const response = await fetch(
+				`http://${host}:${port}/updateStatus`,
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/x-www-form-urlencoded",
+					},
+					body: `id=${component.id}&status=${status ? 1 : 0}`,
+				},
+			);
+
+			if (!response.ok) {
+				throw new Error("Failed to report issue");
+			}
+		} catch (error) {
+			console.error("Failed to report issue:", error);
+			// TODO: show an error toast
+
+			// INFO: revert checkbox
+			const target = event.target as HTMLInputElement;
+			target.checked = component.fixed;
+
+			return;
+		}
+
+		component.fixed = status;
+		issues = issues;
+		return;
+	};
 
 	let settingsDialogRef: null | HTMLDialogElement = null;
 	let endpointFormRef: null | HTMLFormElement = null;
@@ -214,8 +263,13 @@
 		</div>
 
 		<div class="grid m-4 gap-4">
-			{#each sortedIssues as issue}
-				<IssueComponent bind:issue />
+			{#each sortedIssues as issue, issueIndex (issue.id)}
+				<IssueComponent
+					bind:issue
+					onComponentToggle={(event, componentIndex) => {
+						onComponentToggle(event, issueIndex, componentIndex);
+					}}
+				/>
 			{/each}
 		</div>
 	{/if}

@@ -189,12 +189,11 @@ func GetIssues(db *sql.DB) (*protobuf.IssueList, error) {
 	return &protobuf.IssueList{Issues: issues}, nil
 }
 
-// getFaultyComponents retrieves all faulty components for a given issue ID
 func getFaultyComponents(db *sql.DB, issueID int64) ([]*protobuf.FaultyComponent, error) {
 	rows, err := db.Query(`
 		SELECT id, name, fixed, parent_id 
 		FROM faulty_components 
-		WHERE id = ?
+		WHERE parent_id = ?
 	`, issueID)
 	if err != nil {
 		return nil, err
@@ -218,6 +217,24 @@ func getFaultyComponents(db *sql.DB, issueID int64) ([]*protobuf.FaultyComponent
 	return components, nil
 }
 
+// INFO: a status of 1 means its fixed
+func UpdateComponentStatus(db *sql.DB, id string, status string) error {
+	checkConnection(db)
+
+	result, err := db.Exec(`UPDATE faulty_components SET fixed = ? WHERE id = ?`, status, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Rows affected: %d", rowsAffected)
+	return nil
+}
+
 func InsertIssue(db *sql.DB, issue *protobuf.Issue) (int64, error) {
 	checkConnection(db)
 
@@ -239,10 +256,15 @@ func InsertIssue(db *sql.DB, issue *protobuf.Issue) (int64, error) {
 		return 0, err
 	}
 
-	err = insertFaultyComponents(db, issue.Id, issue.FaultyComponents)
+	issueId, err := result.LastInsertId()
 	if err != nil {
 		return 0, err
 	}
 
-	return result.LastInsertId()
+	err = insertFaultyComponents(db, issueId, issue.FaultyComponents)
+	if err != nil {
+		return 0, err
+	}
+
+	return issueId, nil
 }

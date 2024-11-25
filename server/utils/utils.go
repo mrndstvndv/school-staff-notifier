@@ -10,6 +10,11 @@ import (
 
 var debugLogs = true
 
+const (
+	PROTOBUF_MAGIG = 0x01
+	UPDATE_MAGIC = 0x02
+)
+
 func GetLocalIP() (string, error) {
 	conn, err := net.Dial("udp", "8.8.8.8:80")
 	if err != nil {

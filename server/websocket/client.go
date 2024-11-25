@@ -31,7 +31,11 @@ func (c *Client) writePump() {
 				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
-			c.conn.WriteMessage(websocket.BinaryMessage, message)
+			// INFO: specify that it is a protobuf message with a magic number
+			m := []byte{utils.PROTOBUF_MAGIG}
+			m = append(m, message...)
+
+			c.conn.WriteMessage(websocket.BinaryMessage, m)
 		}
 	}
 }

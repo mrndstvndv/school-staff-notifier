@@ -2,10 +2,7 @@
 	import { Issue } from "$lib/types/issues";
 
 	export let issue: Issue;
-	export let onComponentToggle: (
-		event: Event,
-		componentIndex: number,
-	) => void;
+	export let onComponentToggle: (componentIndex: number) => Promise<boolean>;
 	$: isFixed = issue.faultyComponents.every((item) => item.fixed === true);
 </script>
 
@@ -63,8 +60,11 @@
 						<input
 							type="checkbox"
 							checked={item.fixed}
-							on:change={(event) => {
-								onComponentToggle(event, index);
+							on:change={async (event) => {
+								const target = event.target;
+								console.log(target);
+								const result = await onComponentToggle(index);
+								console.log(result);
 							}}
 							class="w-5 h-5 rounded border-gray-300 text-red-600 focus:ring-red-500"
 						/>

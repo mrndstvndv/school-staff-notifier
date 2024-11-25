@@ -60,6 +60,7 @@ func main() {
 	go hub.Run()
 
 	http.HandleFunc("/reportIssue", reportIssue)
+	http.HandleFunc("/updateStatus", updateStatus)
 	http.HandleFunc("/getIssues", getIssues)
 	http.HandleFunc("/ws", func(writer http.ResponseWriter, request *http.Request) {
 		websocket.ServeWs(hub, writer, request)
@@ -138,18 +139,44 @@ func getIssues(writer http.ResponseWriter, request *http.Request) {
 	writer.Write(byte)
 }
 
-func httpError(writer http.ResponseWriter, message string, args ...interface{}) {
+func httpError(writer http.ResponseWriter, code int, message string, args ...interface{}) {
 	message = fmt.Sprintf(message, args...)
 	utils.LogDebug(message)
-	http.Error(writer, message, http.StatusInternalServerError)
+	http.Error(writer, message, code)
+}
+
+func updateStatus(writer http.ResponseWriter, request *http.Request) {
+	if request.Method != http.MethodPost {
+		httpError(writer, http.StatusMethodNotAllowed, "Invalid request method")
+		return
+	}
+
+	err := request.ParseForm()
+	if err != nil {
+		httpError(writer, http.StatusInternalServerError, "Unable to parse form: %s", err)
+		return
+	}
+
+	id := request.Form.Get("id")
+	status := request.Form.Get("status")
+
+	utils.LogDebug("id: %s", id)
+	utils.LogDebug("id: %s", status)
+
+	err = db.UpdateComponentStatus(conn, id, status)
+	if err != nil {
+		httpError(writer, http.StatusInternalServerError, "Failed to update component status: %s", err)
+		return
+	}
 }
 
 func reportIssue(writer http.ResponseWriter, request *http.Request) {
 	body, err := io.ReadAll(request.Body)
 	if err != nil {
-		utils.LogDebug("Unable to read body: %s", err)
-		http.Error(writer, "Unable to read body", http.StatusInternalServerError)
+		httpError(writer, http.StatusInternalServerError, "Unable to read body %s", err)
+		return
 	}
+	defer request.Body.Close()
 
 	var issue protobuf.Issue
 	err = proto.Unmarshal(body, &issue)
@@ -167,7 +194,7 @@ func reportIssue(writer http.ResponseWriter, request *http.Request) {
 
 	body, err = proto.Marshal(&issue)
 	if err != nil {
-		httpError(writer, "Unable to marshal issue: %s", err)
+		httpError(writer, http.StatusInternalServerError, "Unable to marshal issue: %s", err)
 	}
 
 	utils.LogDebug("Broadcasting issue: %s", body)
