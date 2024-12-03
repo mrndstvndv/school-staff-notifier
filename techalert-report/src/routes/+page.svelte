@@ -5,6 +5,7 @@
 	import { IssueReporter } from "$lib/types/IssueReporter";
 	import Search from "$lib/components/Search.svelte";
 	import Settings from "lucide-svelte/icons/settings";
+	import CircleMinus from "lucide-svelte/icons/circle-minus";
 	import { LazyStore } from "@tauri-apps/plugin-store";
 
 	let store: LazyStore;
@@ -352,18 +353,41 @@
 							Issues
 						</p>
 						<ul class="list-none grid grid-cols-2">
-							{#each components as component (component.name)}
-								<label
-									for={component.name}
-									class="flex items-center"
+							{#each components as component, index (component.name)}
+								<div
+									class="grid grid-cols-[1fr,auto] pr-4 group items-center"
 								>
-									<input
-										checked={component.enabled}
-										id={component.name}
-										type="checkbox"
-									/>
-									<span class="ml-2">{component.name}</span>
-								</label>
+									<label
+										for={component.name}
+										class="flex items-center col-start-1"
+									>
+										<input
+											checked={component.enabled}
+											id={component.name}
+											type="checkbox"
+										/>
+										<span class="ml-2"
+											>{component.name}</span
+										>
+									</label>
+
+									<button
+										on:click|preventDefault={() => {
+											if (index < 4) {
+												return;
+											}
+
+											components.splice(index, 1);
+											components = components;
+										}}
+										class="col-start-2 hover:bg-black/15 rounded-full p-2 invisible group-hover:visible"
+									>
+										<CircleMinus
+											class="size-5"
+											color="red"
+										/>
+									</button>
+								</div>
 							{/each}
 							<!-- TODO: Add guard for when non of the items are selected-->
 						</ul>

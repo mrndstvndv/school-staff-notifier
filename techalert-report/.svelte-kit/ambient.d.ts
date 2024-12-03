@@ -27,6 +27,7 @@
  */
 declare module '$env/static/private' {
 	export const ALLUSERSPROFILE: string;
+	export const ANDROID_HOME: string;
 	export const APPDATA: string;
 	export const APPS: string;
 	export const BUILD_TOOLS_BIN: string;
@@ -39,6 +40,7 @@ declare module '$env/static/private' {
 	export const HOMEDRIVE: string;
 	export const HOMEPATH: string;
 	export const INCLUDE: string;
+	export const JAVA_HOME: string;
 	export const LIB: string;
 	export const LOCALAPPDATA: string;
 	export const LOGONSERVER: string;
@@ -74,6 +76,7 @@ declare module '$env/static/private' {
 	export const PSExecutionPolicyPreference: string;
 	export const PSMODULEPATH: string;
 	export const PUBLIC: string;
+	export const SESSIONNAME: string;
 	export const SYSTEMDRIVE: string;
 	export const SYSTEMROOT: string;
 	export const TAURI_CLI_VERBOSITY: string;
@@ -96,6 +99,9 @@ declare module '$env/static/private' {
 	export const WINDIR: string;
 	export const WINDOWSSDKDIR: string;
 	export const WINDOWSSDKVERSION: string;
+	export const WSLENV: string;
+	export const WT_PROFILE_ID: string;
+	export const WT_SESSION: string;
 	export const ZES_ENABLE_SYSMAN: string;
 }
 
@@ -129,6 +135,7 @@ declare module '$env/static/public' {
 declare module '$env/dynamic/private' {
 	export const env: {
 		ALLUSERSPROFILE: string;
+		ANDROID_HOME: string;
 		APPDATA: string;
 		APPS: string;
 		BUILD_TOOLS_BIN: string;
@@ -141,6 +148,7 @@ declare module '$env/dynamic/private' {
 		HOMEDRIVE: string;
 		HOMEPATH: string;
 		INCLUDE: string;
+		JAVA_HOME: string;
 		LIB: string;
 		LOCALAPPDATA: string;
 		LOGONSERVER: string;
@@ -176,6 +184,7 @@ declare module '$env/dynamic/private' {
 		PSExecutionPolicyPreference: string;
 		PSMODULEPATH: string;
 		PUBLIC: string;
+		SESSIONNAME: string;
 		SYSTEMDRIVE: string;
 		SYSTEMROOT: string;
 		TAURI_CLI_VERBOSITY: string;
@@ -198,6 +207,9 @@ declare module '$env/dynamic/private' {
 		WINDIR: string;
 		WINDOWSSDKDIR: string;
 		WINDOWSSDKVERSION: string;
+		WSLENV: string;
+		WT_PROFILE_ID: string;
+		WT_SESSION: string;
 		ZES_ENABLE_SYSMAN: string;
 		[key: `PUBLIC_${string}`]: undefined;
 		[key: `${string}`]: string | undefined;
