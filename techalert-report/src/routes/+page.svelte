@@ -7,6 +7,7 @@
 	import Settings from "lucide-svelte/icons/settings";
 	import CircleMinus from "lucide-svelte/icons/circle-minus";
 	import { LazyStore } from "@tauri-apps/plugin-store";
+	import Database from "@tauri-apps/plugin-sql";
 
 	let store: LazyStore;
 
@@ -20,40 +21,30 @@
 		{ name: "Power Supply", enabled: false },
 	];
 
-	const courses = [
-		"BSIT",
-		"BSCS",
-		"BSIS",
-		"BSCE",
-		"BSME",
-		"BSIE",
-		"BSEE",
-		"BSA",
-	];
+	let courses: string[] = [""];
+	let course = "BSCS";
+	let professors = [""];
 
-	const courseToProf = new Map([
-		["BSIT", []],
-		[
-			"BSCS",
-			[
-				"DELL CASTILLO, YSSANDREA KNERRE Z",
-				"CIELOS, ZYBER JOHN G",
-				"DUMAYAG, DEXTER P",
-				"SEMILLA, MARIA CRISTINA C",
-				"ARESGA, ROLLY JAMES L",
-				"BRAVO, EDISON D",
-				"CARLET, NICOLE",
-			],
-		],
-		["BSIS", []],
-		["BSCE", []],
-	]);
+	$: (async () => {
+		if (db == null) return;
 
-	let course: string = courses[0];
-	$: professors = courseToProf.get(course) ?? [];
+		let result = (await db.select(
+			`SELECT t.first_name, t.last_name
+FROM subject_table s
+JOIN teacher_table t ON s.teacher_id = t.id
+WHERE s.year = ? AND s.section = ? AND s.course = ?;`,
+			[year, section, course],
+		)) as Teacher[];
+		professors = result.map((t) => `${t.first_name} ${t.last_name}`);
+	})();
 
 	let form: HTMLFormElement;
 	let issueReporter: IssueReporter;
+
+	let db: Database | null = null;
+
+	let year = "1";
+	let section: "A";
 
 	onMount(async () => {
 		store = new LazyStore("settings.json");
@@ -62,6 +53,12 @@
 		port = (await store.get("port")) ?? port;
 
 		issueReporter = new IssueReporter(host, port);
+
+		db = await Database.load("mysql://root:@localhost/school");
+		let result = (await db.select(
+			`select * from course_table`,
+		)) as Course[];
+		courses = result.map((e) => e.code);
 	});
 
 	function submitDialog(event: Event) {
@@ -224,6 +221,7 @@
 								class="w-full"
 								name="year"
 								id="year"
+								bind:value={year}
 							>
 								<option value="1">1</option>
 								<option value="2">2</option>
@@ -243,6 +241,7 @@
 								class="w-full"
 								name="section"
 								id="section"
+								bind:value={section}
 							>
 								<option value="A">A</option>
 								<option value="B">B</option>

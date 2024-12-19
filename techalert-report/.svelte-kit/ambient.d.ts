@@ -31,6 +31,7 @@ declare module '$env/static/private' {
 	export const APPDATA: string;
 	export const APPS: string;
 	export const BUILD_TOOLS_BIN: string;
+	export const BUILD_TOOLS_ROOT: string;
 	export const COMMONPROGRAMFILES: string;
 	export const COMMONPROGRAMW6432: string;
 	export const COMPUTERNAME: string;
@@ -76,7 +77,6 @@ declare module '$env/static/private' {
 	export const PSExecutionPolicyPreference: string;
 	export const PSMODULEPATH: string;
 	export const PUBLIC: string;
-	export const SESSIONNAME: string;
 	export const SYSTEMDRIVE: string;
 	export const SYSTEMROOT: string;
 	export const TAURI_CLI_VERBOSITY: string;
@@ -99,9 +99,6 @@ declare module '$env/static/private' {
 	export const WINDIR: string;
 	export const WINDOWSSDKDIR: string;
 	export const WINDOWSSDKVERSION: string;
-	export const WSLENV: string;
-	export const WT_PROFILE_ID: string;
-	export const WT_SESSION: string;
 	export const ZES_ENABLE_SYSMAN: string;
 }
 
@@ -139,6 +136,7 @@ declare module '$env/dynamic/private' {
 		APPDATA: string;
 		APPS: string;
 		BUILD_TOOLS_BIN: string;
+		BUILD_TOOLS_ROOT: string;
 		COMMONPROGRAMFILES: string;
 		COMMONPROGRAMW6432: string;
 		COMPUTERNAME: string;
@@ -184,7 +182,6 @@ declare module '$env/dynamic/private' {
 		PSExecutionPolicyPreference: string;
 		PSMODULEPATH: string;
 		PUBLIC: string;
-		SESSIONNAME: string;
 		SYSTEMDRIVE: string;
 		SYSTEMROOT: string;
 		TAURI_CLI_VERBOSITY: string;
@@ -207,9 +204,6 @@ declare module '$env/dynamic/private' {
 		WINDIR: string;
 		WINDOWSSDKDIR: string;
 		WINDOWSSDKVERSION: string;
-		WSLENV: string;
-		WT_PROFILE_ID: string;
-		WT_SESSION: string;
 		ZES_ENABLE_SYSMAN: string;
 		[key: `PUBLIC_${string}`]: undefined;
 		[key: `${string}`]: string | undefined;
