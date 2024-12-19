@@ -85,6 +85,8 @@
 		const issue = issues[issueIndex];
 		const component = issue.faultyComponents[componentIndex];
 		const status = !component.fixed;
+		
+		console.log(issue.faultyComponents, issue.id)
 
 		// TODO: update database of issue toggle, do a get request
 		// TODO: componentId, status[0/1]

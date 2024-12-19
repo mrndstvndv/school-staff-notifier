@@ -122,20 +122,30 @@ func insertStudent(db *sql.DB, student *protobuf.Student) (int64, error) {
 }
 
 // insertFaultyComponents inserts all faulty components for a given issue
-func insertFaultyComponents(db *sql.DB, issueID int64, components []*protobuf.FaultyComponent) error {
+func insertFaultyComponents(db *sql.DB, issueID int64, components []*protobuf.FaultyComponent) ([]int64, error) {
 	if len(components) == 0 {
-		return nil
+		return nil, nil
 	}
 
+	var ids []int64
+	
+	log.Printf("hello?")
+
 	for _, component := range components {
-		_, err := db.Exec(`INSERT INTO faulty_components (name, fixed, parent_id) VALUES (?, ?, ?)`,
+		result, err := db.Exec(`INSERT INTO faulty_components (name, fixed, parent_id) VALUES (?, ?, ?)`,
 			component.Name, component.Fixed, issueID)
+
+		faultyComponentId, err := result.LastInsertId()
+		ids = append(ids, faultyComponentId)
+
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	log.Printf("ids: %v", ids)
+
+	return ids, nil
 }
 
 func GetIssues(db *sql.DB) (*protobuf.IssueList, error) {
@@ -235,36 +245,36 @@ func UpdateComponentStatus(db *sql.DB, id string, status string) error {
 	return nil
 }
 
-func InsertIssue(db *sql.DB, issue *protobuf.Issue) (int64, error) {
+func InsertIssue(db *sql.DB, issue *protobuf.Issue) (int64, []int64, error) {
 	checkConnection(db)
 
 	studentID, exists, err := getStudentID(db, issue.Student)
 	if err != nil {
-		return 0, err
+		return 0, nil, err
 	}
 
 	if !exists {
 		studentID, err = insertStudent(db, issue.Student)
 		if err != nil {
-			return 0, err
+			return 0, nil, err
 		}
 	}
 
 	result, err := db.Exec(`INSERT INTO issues (student_id, lab_room, pc_number, concern, timestamp) VALUES (?, ?, ?, ?, ?)`,
 		studentID, issue.LabRoom, issue.PcNumber, issue.Concern, issue.Timestamp)
 	if err != nil {
-		return 0, err
+		return 0, nil, err
 	}
 
 	issueId, err := result.LastInsertId()
 	if err != nil {
-		return 0, err
+		return 0, nil, err
 	}
 
-	err = insertFaultyComponents(db, issueId, issue.FaultyComponents)
+	ids, err := insertFaultyComponents(db, issueId, issue.FaultyComponents)
 	if err != nil {
-		return 0, err
+		return 0, nil, err
 	}
 
-	return issueId, nil
+	return issueId, ids, nil
 }

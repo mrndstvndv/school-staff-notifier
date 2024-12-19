@@ -186,11 +186,14 @@ func reportIssue(writer http.ResponseWriter, request *http.Request) {
 
 	utils.LogDebug("Received issue: %v", &issue)
 
-	id, err := db.InsertIssue(conn, &issue)
+	id, ids, err := db.InsertIssue(conn, &issue)
 	if err != nil {
 		log.Fatalf("Unable to insert issue: %s\n", err)
 	}
 	issue.Id = id
+	for i, component := range issue.FaultyComponents {
+		component.Id = ids[i]
+	}
 
 	body, err = proto.Marshal(&issue)
 	if err != nil {
