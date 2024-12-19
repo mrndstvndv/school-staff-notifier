@@ -22,6 +22,8 @@
 	);
 
 	function onFocus(event: Event) {
+		if (items.length == 0) return;
+
 		if (value !== "") {
 			inputRef.select();
 		}
