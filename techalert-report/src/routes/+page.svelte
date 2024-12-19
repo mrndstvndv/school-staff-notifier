@@ -25,6 +25,11 @@
 	let course = "BSCS";
 	let professors = [""];
 
+	let students: Name[] = [];
+
+	let first_name = "";
+	let last_name = "";
+
 	$: (async () => {
 		if (db == null) return;
 
@@ -34,8 +39,13 @@ FROM subject_table s
 JOIN teacher_table t ON s.teacher_id = t.id
 WHERE s.year = ? AND s.section = ? AND s.course = ?;`,
 			[year, section, course],
-		)) as Teacher[];
+		)) as Name[];
 		professors = result.map((t) => `${t.first_name} ${t.last_name}`);
+
+		students = (await db.select(
+			`select first_name, last_name from student_table where year = ? and section = ? and course = ?;`,
+			[year, section, course],
+		)) as Name[];
 	})();
 
 	let form: HTMLFormElement;
@@ -258,11 +268,25 @@ WHERE s.year = ? AND s.section = ? AND s.course = ?;`,
 								class="block text-gray-700 font-semibold mb-2 text-sm"
 								>First name</label
 							>
+
+							<!--
 							<input
 								required
 								class="w-full"
 								type="text"
 								id="first-name"
+								bind:value={first_name}
+							/>
+							-->
+
+							<Search
+								classNames="w-full"
+								items={students.map((e) => e.first_name)}
+								id="first-name"
+								name="first-name"
+								bind:value={first_name}
+								{form}
+								required
 							/>
 						</div>
 
@@ -272,11 +296,25 @@ WHERE s.year = ? AND s.section = ? AND s.course = ?;`,
 								class="block text-gray-700 font-semibold mb-2 text-sm"
 								>Last name</label
 							>
+
+							<!--
 							<input
 								required
 								class="w-full"
 								type="text"
 								id="last-name"
+								bind:value={last_name}
+							/>
+							-->
+
+							<Search
+								classNames="w-full"
+								items={students.map((e) => e.last_name)}
+								id="last-name"
+								name="last-name"
+								bind:value={last_name}
+								{form}
+								required
 							/>
 						</div>
 					</div>

@@ -3,7 +3,7 @@ type Course = {
   code: string;
 };
 
-type Teacher = {
+type Name = {
 	first_name: string;
 	last_name: string;
 }
