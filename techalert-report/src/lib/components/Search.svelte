@@ -112,7 +112,7 @@
 					label={item}
 					focused={index == currentFocus}
 					onClick={(label) => {
-						inputRef.value = label;
+						value = label;
 						closePopover();
 					}}
 				/>
