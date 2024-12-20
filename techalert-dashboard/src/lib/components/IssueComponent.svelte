@@ -66,7 +66,7 @@
 							on:change={(event) => {
 								onComponentToggle(event, index);
 							}}
-							class="w-5 h-5 rounded border-gray-300 text-red-600 focus:ring-red-500"
+							class="w-5 h-5 rounded accent-white text-black"
 						/>
 						<span class="text-gray-700">{item.name}</span>
 					</label>
@@ -78,7 +78,7 @@
 
 <style>
 	/* Custom checkbox styles */
-	input[type="checkbox"] {
-		accent-color: rgb(220, 38, 38);
-	}
+	/*input[type="checkbox"] {*/
+	/*	accent-color: rgb(220, 38, 38);*/
+	/*}*/
 </style>
