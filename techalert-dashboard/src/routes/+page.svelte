@@ -17,12 +17,26 @@
 	import { Label } from "$lib/components/ui/label/index.js";
 	import { fetch } from "@tauri-apps/plugin-http";
 	import { store } from "$lib/app";
+	import FilterChips from "$lib/components/FilterChips.svelte";
 
 	let ws: WebSocket | null = null;
 	export let data: PageData;
 	let issues = data.issues;
 	let sortDirection: "asc" | "desc" = "desc";
-	$: sortedIssues = issues.sort((a, b) => {
+
+	let showFinished = true;
+
+	$: filteredIssues = issues.filter((issue) => {
+		if (
+			issue.faultyComponents.every((item) => item.fixed === true) &&
+			showFinished == false
+		) {
+			return false;
+		}
+		return true;
+	});
+
+	$: sortedIssues = filteredIssues.sort((a, b) => {
 		const timeA = Number.parseInt(a.timestamp, 10);
 		const timeB = Number.parseInt(b.timestamp, 10);
 		return sortDirection === "asc" ? timeA - timeB : timeB - timeA;
@@ -185,6 +199,7 @@
 			</button>
 		</div>
 	</header>
+	<!-- Header -->
 
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
@@ -236,8 +251,12 @@
 	{:else if issues.length === 0}
 		<p class="no-issues">No issues found</p>
 	{:else}
-		<!--<h1 class="text-2xl font-semibold mb-4">Issues</h1>-->
-		<div class="flex justify-end mt-4 mb-4">
+		<div class="flex justify-between mt-4 mb-4 mx-8">
+			<div>
+				<FilterChips bind:checked={showFinished} label="Finished"
+				></FilterChips>
+			</div>
+
 			<button
 				on:click={sortIssues}
 				class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium rounded-md"
