@@ -1,4 +1,4 @@
-import { APIENDPOINT } from "$lib/constants";
+import { store } from "$lib/app";
 import { Issue, IssueList } from "$lib/types/issues";
 import { fetch } from "@tauri-apps/plugin-http";
 
@@ -9,8 +9,12 @@ export type PageData = {
 
 export const load: () => Promise<PageData> = async () => {
 	let error = "";
+
+	const host = await store.get("host");
+	const port = await store.get("port");
+
 	try {
-		let res = await fetch(`http://${APIENDPOINT}/getIssues`, {
+		let res = await fetch(`http://${host}:${port}/getIssues`, {
 			method: "GET",
 			headers: {
 				"Content-Type": "application/x-protobuf",

@@ -9,13 +9,14 @@
 	import WebSocket from "@tauri-apps/plugin-websocket";
 
 	import Settings from "lucide-svelte/icons/settings";
+	import Database from "lucide-svelte/icons/database";
 
 	import { Button } from "$lib/components/ui/button/index.js";
 	import * as Card from "$lib/components/ui/card/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
 	import { Label } from "$lib/components/ui/label/index.js";
-	import { LazyStore } from "@tauri-apps/plugin-store";
 	import { fetch } from "@tauri-apps/plugin-http";
+	import { store } from "$lib/app";
 
 	let ws: WebSocket | null = null;
 	export let data: PageData;
@@ -40,11 +41,7 @@
 		}
 	});
 
-	let store: LazyStore;
-
 	onMount(async () => {
-		store = new LazyStore("settings.json");
-
 		host = (await store.get("host")) ?? "";
 		port = (await store.get("port")) ?? "";
 
@@ -85,8 +82,8 @@
 		const issue = issues[issueIndex];
 		const component = issue.faultyComponents[componentIndex];
 		const status = !component.fixed;
-		
-		console.log(issue.faultyComponents, issue.id)
+
+		console.log(issue.faultyComponents, issue.id);
 
 		// TODO: update database of issue toggle, do a get request
 		// TODO: componentId, status[0/1]
@@ -174,12 +171,17 @@
 				Cagayan State University
 			</h1>
 		</div>
-		<div class="flex items-center justify-end md:col-start-3 col-start-2">
+		<div
+			class="flex justify-self-end items-center self-center justify-end md:col-start-3 col-start-2 bg-black/10 rounded-full px-2 py-1"
+		>
+			<a href="/database" class="hover:bg-[#4B3329] rounded-full p-2">
+				<Database color="white" />
+			</a>
 			<button
 				on:click={onSettingsClick}
-				class="hover:bg-[#4B3329] rounded-md p-2"
+				class="hover:bg-[#4B3329] rounded-full p-2"
 			>
-				<Settings class="col-start-3" color="white" />
+				<Settings color="white" />
 			</button>
 		</div>
 	</header>
@@ -187,15 +189,17 @@
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 	<dialog
-		on:click|self={() => settingsDialogRef.close()}
-		class="rounded-lg border shadow-lg border-gray-300 backdrop:bg-background/80 backdrop:fixed backdrop:inset-0 backdrop:backdrop-blur-sm"
+		on:click|self={() => {
+			if (settingsDialogRef !== null) {
+				settingsDialogRef.close();
+			}
+		}}
+		class="rounded-lg border shadow-lg border-gray-300 backdrop:bg-background/80 backdrop:fixed backdrop:inset-0 backdrop:backdrop-blur-sm min-w-80"
 		bind:this={settingsDialogRef}
 	>
 		<Card.Header>
 			<Card.Title>Configure server</Card.Title>
-			<Card.Description
-				>Set the server endpoint to be used for reporting</Card.Description
-			>
+			<Card.Description>Set the server endpoint</Card.Description>
 		</Card.Header>
 		<Card.Content>
 			<form bind:this={endpointFormRef}>

@@ -142,7 +142,8 @@ WHERE s.year = ? AND s.section = ? AND s.course = ?;`,
 	</header>
 
 	<!-- TODO: add functionality to the dialog -->
-	<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions (because of reasons) -->
+	<!-- svelte-ignore a11y-click-events-have-key-events -->
+  	<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 	<dialog
 		on:click|self={() => settingsDialogRef.close()}
 		bind:this={settingsDialogRef}
