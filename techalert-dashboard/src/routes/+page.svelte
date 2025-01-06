@@ -26,17 +26,7 @@
 
 	let showFinished = true;
 
-	$: filteredIssues = issues.filter((issue) => {
-		if (
-			issue.faultyComponents.every((item) => item.fixed === true) &&
-			showFinished == false
-		) {
-			return false;
-		}
-		return true;
-	});
-
-	$: sortedIssues = filteredIssues.sort((a, b) => {
+	$: sortedIssues = issues.sort((a, b) => {
 		const timeA = Number.parseInt(a.timestamp, 10);
 		const timeB = Number.parseInt(b.timestamp, 10);
 		return sortDirection === "asc" ? timeA - timeB : timeB - timeA;
@@ -45,6 +35,10 @@
 	function sortIssues() {
 		console.debug("Sorting issues", issues);
 		sortDirection = sortDirection === "asc" ? "desc" : "asc";
+	}
+
+	function isFixed(issue: Issue) {
+		return issue.faultyComponents.every((item) => item.fixed === true);
 	}
 
 	onDestroy(async () => {
@@ -289,12 +283,18 @@
 
 		<div class="grid m-4 gap-4">
 			{#each sortedIssues as issue, issueIndex (issue.id)}
-				<IssueComponent
-					bind:issue
-					onComponentToggle={(event, componentIndex) => {
-						onComponentToggle(event, issueIndex, componentIndex);
-					}}
-				/>
+				{#if !isFixed(issue) || showFinished}
+					<IssueComponent
+						bind:issue
+						onComponentToggle={(event, componentIndex) => {
+							onComponentToggle(
+								event,
+								issueIndex,
+								componentIndex,
+							);
+						}}
+					/>
+				{/if}
 			{/each}
 		</div>
 	{/if}
