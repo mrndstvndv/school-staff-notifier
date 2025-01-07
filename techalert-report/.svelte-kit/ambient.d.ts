@@ -50,10 +50,12 @@ declare module '$env/static/private' {
 	export const MYVIMRC: string;
 	export const NODE: string;
 	export const NODE_ENV: string;
+	export const npm_command: string;
 	export const npm_config_local_prefix: string;
 	export const npm_config_user_agent: string;
 	export const npm_execpath: string;
 	export const npm_lifecycle_event: string;
+	export const npm_lifecycle_script: string;
 	export const npm_node_execpath: string;
 	export const npm_package_json: string;
 	export const npm_package_name: string;
@@ -158,10 +160,12 @@ declare module '$env/dynamic/private' {
 		MYVIMRC: string;
 		NODE: string;
 		NODE_ENV: string;
+		npm_command: string;
 		npm_config_local_prefix: string;
 		npm_config_user_agent: string;
 		npm_execpath: string;
 		npm_lifecycle_event: string;
+		npm_lifecycle_script: string;
 		npm_node_execpath: string;
 		npm_package_json: string;
 		npm_package_name: string;

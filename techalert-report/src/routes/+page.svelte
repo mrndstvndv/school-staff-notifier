@@ -8,6 +8,7 @@
 	import CircleMinus from "lucide-svelte/icons/circle-minus";
 	import { LazyStore } from "@tauri-apps/plugin-store";
 	import Database from "@tauri-apps/plugin-sql";
+    import ChipSwitch from "./_components/ChipSwitch.svelte";
 
 	let store: LazyStore;
 
@@ -115,9 +116,6 @@ WHERE s.year = ? AND s.section = ? AND s.course = ?;`,
 			components = components;
 		}
 	}
-
-	// TODO: Student names should be searchable based on year/section and course
-	// TODO: Separate the student info from the reporting
 </script>
 
 <div class="min-h-screen">
@@ -143,7 +141,7 @@ WHERE s.year = ? AND s.section = ? AND s.course = ?;`,
 
 	<!-- TODO: add functionality to the dialog -->
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
-  	<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+	<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 	<dialog
 		on:click|self={() => settingsDialogRef.close()}
 		bind:this={settingsDialogRef}
@@ -388,6 +386,14 @@ WHERE s.year = ? AND s.section = ? AND s.course = ?;`,
 						<p
 							class="block text-gray-700 font-semibold mb-2 text-sm"
 						>
+							Urgency
+						</p>
+							
+						<ChipSwitch></ChipSwitch>
+
+						<p
+							class="mt-4 block text-gray-700 font-semibold mb-2 text-sm"
+						>
 							Issues
 						</p>
 						<ul class="list-none grid grid-cols-2">
@@ -430,7 +436,6 @@ WHERE s.year = ? AND s.section = ? AND s.course = ?;`,
 							<!-- TODO: Add guard for when non of the items are selected-->
 						</ul>
 
-						<!-- TODO: Add ability to remove the added items -->
 						<div
 							class="py-3 flex text-sm items-center align-middle"
 						>

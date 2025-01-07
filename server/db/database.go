@@ -55,6 +55,7 @@ func CreateTable(conn *sql.DB) error {
 		timestamp TEXT NOT NULL,
 		pc_number INTEGER NOT NULL,
 		student_id INTEGER NOT NULL,
+		urgency INTEGER NOT NULL,
 		FOREIGN KEY (student_id) REFERENCES students(id)
 	);
 
@@ -128,7 +129,7 @@ func insertFaultyComponents(db *sql.DB, issueID int64, components []*protobuf.Fa
 	}
 
 	var ids []int64
-	
+
 	log.Printf("hello?")
 
 	for _, component := range components {
@@ -151,7 +152,7 @@ func insertFaultyComponents(db *sql.DB, issueID int64, components []*protobuf.Fa
 func GetIssues(db *sql.DB) (*protobuf.IssueList, error) {
 	checkConnection(db)
 
-	result, err := db.Query(`SELECT s.first_name, s.last_name, s.year, s.section, s.course, s.professor, i.lab_room, i.pc_number, i.concern, i.timestamp, i.id FROM students s INNER JOIN issues i ON s.id = i.student_id`)
+	result, err := db.Query(`SELECT s.first_name, s.last_name, s.year, s.section, s.course, s.professor, i.lab_room, i.pc_number, i.concern, i.timestamp, i.id, i.urgency FROM students s INNER JOIN issues i ON s.id = i.student_id`)
 	if err != nil {
 		return nil, err
 	}
@@ -160,6 +161,8 @@ func GetIssues(db *sql.DB) (*protobuf.IssueList, error) {
 	var issues []*protobuf.Issue
 	for result.Next() {
 		issue := &protobuf.Issue{Student: &protobuf.Student{}}
+
+		log.Printf("%v", &issue.Urgency)
 
 		err := result.Scan(
 			&issue.Student.FirstName,
@@ -173,6 +176,7 @@ func GetIssues(db *sql.DB) (*protobuf.IssueList, error) {
 			&issue.Concern,
 			&issue.Timestamp,
 			&issue.Id,
+			&issue.Urgency,
 		)
 		if err != nil {
 			return nil, err
@@ -260,8 +264,8 @@ func InsertIssue(db *sql.DB, issue *protobuf.Issue) (int64, []int64, error) {
 		}
 	}
 
-	result, err := db.Exec(`INSERT INTO issues (student_id, lab_room, pc_number, concern, timestamp) VALUES (?, ?, ?, ?, ?)`,
-		studentID, issue.LabRoom, issue.PcNumber, issue.Concern, issue.Timestamp)
+	result, err := db.Exec(`INSERT INTO issues (student_id, lab_room, pc_number, concern, timestamp, urgency) VALUES (?, ?, ?, ?, ?, ?)`,
+		studentID, issue.LabRoom, issue.PcNumber, issue.Concern, issue.Timestamp, issue.Urgency)
 	if err != nil {
 		return 0, nil, err
 	}

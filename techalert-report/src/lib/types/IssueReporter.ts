@@ -57,6 +57,7 @@ export class IssueReporter {
 			timestamp: Date.now().toString(),
 			concern: (document.querySelector('textarea') as HTMLTextAreaElement).value,
 			id: 0,
+			urgency: parseInt((document.getElementById('urgency') as HTMLInputElement).value)
 		};
 	}
 

@@ -20,6 +20,12 @@ message FaultyComponent {
   int64 id = 4;
 }
 
+enum Urgency {
+  LOW = 0;
+  MEDIUM = 1;
+  HIGH = 2;
+}
+
 message Issue {
   Student student = 1;
   string labRoom = 2;
@@ -28,6 +34,7 @@ message Issue {
   int32 pcNumber = 5;
   int64 id = 6;
   repeated FaultyComponent faultyComponents = 7;
+  Urgency urgency = 8;
 };
 
 message IssueList { repeated Issue issues = 1; };

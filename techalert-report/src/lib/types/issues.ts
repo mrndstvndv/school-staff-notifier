@@ -9,6 +9,45 @@ import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 
 export const protobufPackage = "main";
 
+export enum Urgency {
+  LOW = 0,
+  MEDIUM = 1,
+  HIGH = 2,
+  UNRECOGNIZED = -1,
+}
+
+export function urgencyFromJSON(object: any): Urgency {
+  switch (object) {
+    case 0:
+    case "LOW":
+      return Urgency.LOW;
+    case 1:
+    case "MEDIUM":
+      return Urgency.MEDIUM;
+    case 2:
+    case "HIGH":
+      return Urgency.HIGH;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return Urgency.UNRECOGNIZED;
+  }
+}
+
+export function urgencyToJSON(object: Urgency): string {
+  switch (object) {
+    case Urgency.LOW:
+      return "LOW";
+    case Urgency.MEDIUM:
+      return "MEDIUM";
+    case Urgency.HIGH:
+      return "HIGH";
+    case Urgency.UNRECOGNIZED:
+    default:
+      return "UNRECOGNIZED";
+  }
+}
+
 export interface Student {
   firstName: string;
   lastName: string;
@@ -33,6 +72,7 @@ export interface Issue {
   pcNumber: number;
   id: number;
   faultyComponents: FaultyComponent[];
+  urgency: Urgency;
 }
 
 export interface IssueList {
@@ -288,7 +328,16 @@ export const FaultyComponent: MessageFns<FaultyComponent> = {
 };
 
 function createBaseIssue(): Issue {
-  return { student: undefined, labRoom: "", concern: "", timestamp: "", pcNumber: 0, id: 0, faultyComponents: [] };
+  return {
+    student: undefined,
+    labRoom: "",
+    concern: "",
+    timestamp: "",
+    pcNumber: 0,
+    id: 0,
+    faultyComponents: [],
+    urgency: 0,
+  };
 }
 
 export const Issue: MessageFns<Issue> = {
@@ -313,6 +362,9 @@ export const Issue: MessageFns<Issue> = {
     }
     for (const v of message.faultyComponents) {
       FaultyComponent.encode(v!, writer.uint32(58).fork()).join();
+    }
+    if (message.urgency !== 0) {
+      writer.uint32(64).int32(message.urgency);
     }
     return writer;
   },
@@ -380,6 +432,14 @@ export const Issue: MessageFns<Issue> = {
           message.faultyComponents.push(FaultyComponent.decode(reader, reader.uint32()));
           continue;
         }
+        case 8: {
+          if (tag !== 64) {
+            break;
+          }
+
+          message.urgency = reader.int32() as any;
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -400,6 +460,7 @@ export const Issue: MessageFns<Issue> = {
       faultyComponents: globalThis.Array.isArray(object?.faultyComponents)
         ? object.faultyComponents.map((e: any) => FaultyComponent.fromJSON(e))
         : [],
+      urgency: isSet(object.urgency) ? urgencyFromJSON(object.urgency) : 0,
     };
   },
 
@@ -426,6 +487,9 @@ export const Issue: MessageFns<Issue> = {
     if (message.faultyComponents?.length) {
       obj.faultyComponents = message.faultyComponents.map((e) => FaultyComponent.toJSON(e));
     }
+    if (message.urgency !== 0) {
+      obj.urgency = urgencyToJSON(message.urgency);
+    }
     return obj;
   },
 
@@ -443,6 +507,7 @@ export const Issue: MessageFns<Issue> = {
     message.pcNumber = object.pcNumber ?? 0;
     message.id = object.id ?? 0;
     message.faultyComponents = object.faultyComponents?.map((e) => FaultyComponent.fromPartial(e)) || [];
+    message.urgency = object.urgency ?? 0;
     return message;
   },
 };
