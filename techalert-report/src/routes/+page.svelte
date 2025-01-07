@@ -310,7 +310,7 @@ WHERE s.year = ? AND s.section = ? AND s.course = ?;`,
 
 							<Search
 								classNames="w-full"
-								items={students.map((e) => e.first_name)}
+								items={students.map((e) => e.last_name)}
 								id="last-name"
 								name="last-name"
 								bind:value={last_name}
