@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
+
 	import "../app.css";
 	import csulogo from "$lib/assets/csulogo.png";
 	import type { PageData } from "./+page";
@@ -299,3 +300,6 @@
 		</div>
 	{/if}
 </div>
+
+<style>
+</style>

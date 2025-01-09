@@ -5,7 +5,9 @@ import (
 	"bongserver/protobuf"
 	"bongserver/utils"
 	"bongserver/websocket"
+	"crypto/md5"
 	"database/sql"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"log"
@@ -15,6 +17,10 @@ import (
 	"os/exec"
 
 	"google.golang.org/protobuf/proto"
+)
+
+const (
+	SCHOOLDB_NAME = "bongserver.db"
 )
 
 var (
@@ -62,6 +68,7 @@ func main() {
 	http.HandleFunc("/reportIssue", reportIssue)
 	http.HandleFunc("/updateStatus", updateStatus)
 	http.HandleFunc("/getIssues", getIssues)
+	http.HandleFunc("/getSchoolDb", getSchoolDb)
 	http.HandleFunc("/ws", func(writer http.ResponseWriter, request *http.Request) {
 		websocket.ServeWs(hub, writer, request)
 	})
@@ -78,6 +85,46 @@ func main() {
 	err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	if err != nil {
 		log.Printf("error occured with server: %s\n", err)
+	}
+}
+
+func calculateChecksum(filePath string) (string, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	hash := md5.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(hash.Sum(nil)), nil
+}
+
+func getSchoolDb(writer http.ResponseWriter, request *http.Request) {
+	sum, err := calculateChecksum(SCHOOLDB_NAME)
+	if err != nil {
+		httpError(writer, http.StatusInternalServerError, "Failed to get the sum of database: %v", err)
+		return
+	} else {
+		log.Println(sum)
+	}
+
+	schoolDb, err := os.Open(SCHOOLDB_NAME)
+	if err != nil {
+		httpError(writer, http.StatusInternalServerError, "Failed to open school database: %v", err)
+		return
+	}
+	defer schoolDb.Close()
+
+	writer.Header().Set("Content-Disposition", "attachment; filename=school.db")
+	writer.Header().Set("Content-Type", "application/octet-stream")
+	writer.Header().Set("X-File-Checksum", sum)
+
+	if _, err := io.Copy(writer, schoolDb); err != nil {
+		http.Error(writer, fmt.Sprintf("Failed to send file: %v", err), http.StatusInternalServerError)
 	}
 }
 

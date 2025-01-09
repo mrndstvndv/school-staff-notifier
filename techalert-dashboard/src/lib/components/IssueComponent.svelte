@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Issue, Urgency, urgencyToJSON } from "$lib/types/issues";
+	import { fly } from "svelte/transition";
 
 	export let issue: Issue;
 	export let onComponentToggle: (
@@ -27,7 +28,10 @@
 </script>
 
 <div
-	class="mx-auto p-6 bg-white {isFixed ? 'shadow-green-100' : 'shadow-red-100'} shadow-sm rounded-lg shadow-sm border border-gray-200 w-full"
+	transition:fly={{ x: 20, duration: 300 }}
+	class="mx-auto p-6 bg-white {isFixed
+		? 'shadow-green-100'
+		: 'shadow-red-100'} rounded-lg shadow-sm border border-gray-200 w-full"
 >
 	<header class="flex items-center gap-4 mb-6">
 		<div

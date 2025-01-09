@@ -8,7 +8,7 @@
 	import CircleMinus from "lucide-svelte/icons/circle-minus";
 	import { LazyStore } from "@tauri-apps/plugin-store";
 	import Database from "@tauri-apps/plugin-sql";
-    import ChipSwitch from "./_components/ChipSwitch.svelte";
+	import ChipSwitch from "./_components/ChipSwitch.svelte";
 
 	let store: LazyStore;
 
@@ -47,6 +47,18 @@ WHERE s.year = ? AND s.section = ? AND s.course = ?;`,
 			`select first_name, last_name from student_table where year = ? and section = ? and course = ?;`,
 			[year, section, course],
 		)) as Name[];
+	})();
+
+	$: (async () => {
+		let ln = students.find((item) => {
+			return item.first_name==first_name
+		})?.last_name
+
+		if (ln == undefined) {
+			return
+		}
+
+		last_name = ln
 	})();
 
 	let form: HTMLFormElement;
@@ -164,6 +176,7 @@ WHERE s.year = ? AND s.section = ? AND s.course = ?;`,
 					name="host"
 					id="host"
 					placeholder="192.168.1.1"
+					autocomplete="off"
 				/>
 			</div>
 			<div class="grid grid-cols-4 items-center gap-4">
@@ -178,6 +191,7 @@ WHERE s.year = ? AND s.section = ? AND s.course = ?;`,
 					id="port"
 					name="port"
 					placeholder="8080"
+					autocomplete="off"
 				/>
 			</div>
 
@@ -198,6 +212,7 @@ WHERE s.year = ? AND s.section = ? AND s.course = ?;`,
 				class="grid md:grid-cols-2 grid-rows-[auto,1fr] gap-8"
 				id="issue-form"
 				bind:this={form}
+				autocomplete="off"
 			>
 				<!-- Left Column - Input Fields -->
 				<div class="space-y-5">
@@ -388,7 +403,7 @@ WHERE s.year = ? AND s.section = ? AND s.course = ?;`,
 						>
 							Urgency
 						</p>
-							
+
 						<ChipSwitch></ChipSwitch>
 
 						<p
@@ -448,6 +463,7 @@ WHERE s.year = ? AND s.section = ? AND s.course = ?;`,
 									name="other-input"
 									class="h-6 col-start-3"
 									type="text"
+									autocomplete="off"
 									on:keydown={onOtherInputEntered}
 								/>
 							</div>

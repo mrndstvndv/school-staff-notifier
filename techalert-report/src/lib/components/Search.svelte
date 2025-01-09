@@ -30,7 +30,7 @@
 
 		let target = event.target as HTMLInputElement;
 		let popover = target.nextElementSibling as HTMLDialogElement;
-		popover.open = true;
+		openPopover();
 
 		inputRef.addEventListener("keyup", onKeyUp);
 	}
@@ -76,7 +76,13 @@
 		let target = event.target as HTMLInputElement;
 		filterText = target.value;
 		currentFocus = 0;
-		popoverRef.open = true;
+		openPopover()
+	}
+
+	function openPopover() {
+		if (filteredItems.length > 0) {
+			popoverRef.open = true;
+		}
 	}
 
 	function onBlur(event: FocusEvent) {
@@ -99,6 +105,7 @@
 		{placeholder}
 		{id}
 		{required}
+		aria-autocomplete="none"
 	/>
 
 	<dialog
